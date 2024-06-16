@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Particle System</title>
+    <style>
+        body { margin: 0; overflow: hidden; }
+        canvas { display: block; }
+    
+        .controls {
+            display: flex;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+    <div class=".controls" >
+        <button id="add100" >Add 100 roaming particles</button>
+        <button id="remove100" >Remove 100 roaming particles</button>
+        <label>Pick roaming particles color</label><input type="color" id="color" value="#D90808"/>
+        <label>Pick bursting particles color</label><input type="color" id="colorBurst" value="#92E713"/>
+        <label>Pick rays color</label><input type="color" id="colorRay" value="#422092"/>
+
+    </div>
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight - 100;
+
+        let particles = [];
+        const rays = [];
+        let lastVolume = null;
+
+        class Particle {
+            constructor(x, y, respawnable = true) {
+                this.x = x;
+                this.y = y;
+                this.size = Math.random() * 5 + 1;
+                this.speedX = Math.random() * 3 - 1.5;
+                this.speedY = Math.random() * 3 - 1.5;
+                this.respawnable = respawnable;
+            }
+
+            update(volume) {
+                this.x += this.speedX * (volume * 3);
+                this.y += this.speedY * (volume * 3);
+
+                if (this.x > canvas.width) this.x = 0;
+                if (this.x < 0) this.x = canvas.width;
+                if (this.y > canvas.height) this.y = 0;
+                if (this.y < 0) this.y = canvas.height;
+
+                if (this.size > 0.2) this.size -= 0.02;
+            }
+
+            draw() {
+                ctx.fillStyle = this.respawnable ? document.getElementById("color").value : document.getElementById("colorBurst").value;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.closePath();
+                ctx.fill();
+            }
+        }
+
+        class Ray {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.angle = -Math.PI / 2; // Angle set to 90 degrees upwards
+                this.length = 0;
+                this.maxLength = canvas.height * 0.40; // Set max length to canvas height
+                this.speed = 10;
+            }
+
+            updateLength(frequency) {
+                this.length = (frequency / 256) * this.maxLength;
+            }
+
+            draw() {
+                ctx.strokeStyle = document.getElementById("colorRay").value;
+                ctx.beginPath();
+                ctx.lineWidth = 10;
+                ctx.moveTo(this.x, this.y);
+                ctx.lineTo(
+                    this.x + Math.cos(this.angle) * this.length,
+                    this.y + Math.sin(this.angle) * this.length
+                );
+                ctx.stroke();
+            }
+        }
+
+        function init() {
+            particles.length = 0;
+            for (let i = 0; i < 300; i++) {
+                particles.push(new Particle(Math.random() * canvas.width, Math.random() * canvas.height));
+            }
+
+            // Initialize rays at the center with a small gap
+            const centerX = canvas.width / 2;
+            const gap = 11; // Adjust this value to set the gap between rays
+            for (let i = -25; i <= 25; i++) {
+                rays.push(new Ray(centerX + i * gap, canvas.height));
+            }
+        }
+
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = "black";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            analyser.getByteFrequencyData(dataArray);
+            const volume = dataArray.reduce((a, b) => a + b, 0) / dataArray.length / 128;
+
+            particles.forEach((particle, index) => {
+                if (particle.size <= 0.2) {
+                    particles.splice(index, 1);
+                    if (particle.respawnable) {
+                        particles.push(new Particle(Math.random() * canvas.width, Math.random() * canvas.height));
+                    }
+                } else {
+                    particle.update(volume);
+                    particle.draw();
+                }
+            });
+
+            const currentVolume = dataArray.reduce((a, b) => a + b, 0) / dataArray.length;
+            if (lastVolume !== null && currentVolume > lastVolume * 1.5) {
+                for (let i = 0; i < 100; i++) {
+                    particles.push(new Particle(canvas.width / 2, canvas.height / 2, false));
+                }
+            }
+            lastVolume = currentVolume;
+
+            rays.forEach((ray, index) => {
+                ray.updateLength(dataArray[index % dataArray.length]);
+                ray.draw();
+            });
+
+            requestAnimationFrame(animate);
+        }
+
+        function setupAudio() {
+            navigator.mediaDevices.getUserMedia({ audio: true, video: false })
+                .then(function(stream) {
+                    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    const source = audioContext.createMediaStreamSource(stream);
+                    analyser = audioContext.createAnalyser();
+                    analyser.fftSize = 256;
+                    const bufferLength = analyser.frequencyBinCount;
+                    dataArray = new Uint8Array(bufferLength);
+                    source.connect(analyser);
+
+                    init();
+                    animate();
+                })
+                .catch(function(err) {
+                    console.error('Error accessing audio stream: ' + err);
+                });
+        }
+
+        setupAudio();
+
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            init();
+        });
+
+
+        const add100 = document.getElementById('add100');
+        add100.addEventListener('click', () => {
+            for (let i = 0; i < 100; i++) {
+                particles.push(new Particle(Math.random() * canvas.width, Math.random() * canvas.height));
+            }
+        });
+
+
+        const remove100 = document.getElementById('remove100');
+        remove100.addEventListener('click', () => {
+            if (particles.length <= 100) {
+                particles = [];
+            } else {
+                particles.splice(0, 100);
+            }
+        });
+
+    </script>
+</body>
+</html>
