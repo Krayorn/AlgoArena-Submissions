@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bitcoin Transactions Number Generator</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+        }
+        #random-numbers {
+            font-size: 1.5em;
+            font-weight: bold;
+        }
+
+        .cont {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        #controls {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .number-container {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            padding: 10px;
+            background-color: white;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            flex-direction: column;
+            width: 100%;
+        }
+
+        .number {
+            font-size: 1.5em;
+            font-weight: bold;
+        }
+
+        .transaction {
+            font-size: 0.8em;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="cont">
+        <div id="random-numbers">Loading...</div>
+        <div id="controls">
+            <div>
+                <label>The upper limit of the random range (default is between 0-100)</label>
+                <input type="number" id="range-input" placeholder="Enter range" />
+            </div>
+            <div>
+                <label>Quantity of numbers to generate</label>
+                <input type="number" id="random-count" placeholder="1" />
+            </div>
+            <button id="generate-button">Generate Random Number</button>
+        </div>
+    </div>
+    <script>
+        async function fetchLatestTransactionHashes() {
+            try {
+                const response = await fetch('https://blockchain.info/unconfirmed-transactions?format=json');
+                const data = await response.json();
+                return data.txs;
+            } catch (error) {
+                console.error('Error fetching transaction hashes:', error);
+            }
+        }
+
+        async function transactionsToRandom(transactionHash) {
+            const encoder = new TextEncoder();
+            const data = encoder.encode(transactionHash.hash);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+            const numericValue = BigInt('0x' + hashHex);
+            const range = document.getElementById('range-input').value || 100;
+            return numericValue % BigInt(range);
+        }
+
+        async function generateRandomNumber() {
+            const transactionHashes = await fetchLatestTransactionHashes();
+            if (transactionHashes) {
+                const numbers = [];
+                for (let i = 0; i < (document.getElementById('random-count').value || 1); i++) {
+                    const val = await transactionsToRandom(transactionHashes[i]);
+                    numbers.push({ number: val, transaction: transactionHashes[i] });
+                }
+                return numbers;
+            } else {
+                throw new Error('Failed to fetch transaction hashes');
+            }
+        }
+
+        async function updateRandomNumber() {
+            try {
+                const randomNumbers = await generateRandomNumber();
+                const randomNumbersContainer = document.getElementById('random-numbers');
+                randomNumbersContainer.innerHTML = ''; // Clear previous numbers
+
+                randomNumbers.forEach(item => {
+                    const numberContainer = document.createElement('div');
+                    numberContainer.className = 'number-container';
+
+                    const numberDiv = document.createElement('div');
+                    numberDiv.className = 'number';
+                    numberDiv.textContent = item.number;
+
+                    const transactionDiv = document.createElement('div');
+                    transactionDiv.className = 'transaction';
+                    transactionDiv.textContent = item.transaction.hash;
+
+                    numberContainer.appendChild(numberDiv);
+                    numberContainer.appendChild(transactionDiv);
+                    randomNumbersContainer.appendChild(numberContainer);
+                });
+            } catch (error) {
+                console.error('Error generating random number:', error);
+            }
+        }
+
+        updateRandomNumber();
+        document.getElementById('generate-button').addEventListener('click', updateRandomNumber);
+    </script>
+</body>
+</html>
