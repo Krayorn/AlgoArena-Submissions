@@ -23,14 +23,17 @@ let clouds = [cloud, cloud2, cloud3];
 let currentCloud = 0
 
 const sky = new Image();
-sky.src = './1.png';
+sky.src = './sky.png';
+
+const stepIMG = new Image();
+stepIMG.src = './step.png';
 
 let focus = false;
 let idle = true;
 
 let character = {
     x: 1,
-    y: canvas.height - 158,
+    y: canvas.height - 142,
     speed: 1,
 };
 
@@ -90,8 +93,7 @@ function drawCharacter() {
 
 function drawStairs() {
     stairs.forEach(step => {
-        ctx.fillStyle = step.color;
-        ctx.fillRect(step.x, step.y, step.width, step.height);
+        ctx.drawImage(stepIMG, step.x, step.y, step.width, step.height);
     });
 }
 
