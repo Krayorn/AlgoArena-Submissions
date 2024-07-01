@@ -34,17 +34,17 @@ let movedOnce = false
 
 const mute = document.getElementById('mute');
 const unmute = document.getElementById('unmute');
-console.log(mute, unmute)
+
 mute.addEventListener('click', () => {
     mute.style.display = 'none'
     unmute.style.display = 'block'
-    audio.muted = true
+    audio.muted = false
 });
 
 unmute.addEventListener('click', () => {
     unmute.style.display = 'none'
     mute.style.display = 'block'
-    audio.muted = false
+    audio.muted = true
 });
 
 let focus = false;
