@@ -28,6 +28,25 @@ sky.src = './sky.png';
 const stepIMG = new Image();
 stepIMG.src = './step.png';
 
+var audio = new Audio('musicBox.mp3');
+audio.loop = true
+let movedOnce = false
+
+const mute = document.getElementById('mute');
+const unmute = document.getElementById('unmute');
+console.log(mute, unmute)
+mute.addEventListener('click', () => {
+    mute.style.display = 'none'
+    unmute.style.display = 'block'
+    audio.muted = true
+});
+
+unmute.addEventListener('click', () => {
+    unmute.style.display = 'none'
+    mute.style.display = 'block'
+    audio.muted = false
+});
+
 let focus = false;
 let idle = true;
 
@@ -113,7 +132,7 @@ function updateCharacter() {
                 currentCloud = (currentCloud + 1) % clouds.length
                 character = {
                     x: 1,
-                    y: canvas.height - 158,
+                    y: canvas.height - 142,
                     speed: 1,
                 };
 
@@ -167,6 +186,11 @@ function drawBackground() {
 function gameLoop() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
+    if (rightPressed && !movedOnce) {
+        movedOnce = true
+        audio.play();
+    }
+
     drawBackground()
     updateCharacter();
     drawStairs();
