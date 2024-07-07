@@ -592,13 +592,14 @@ function deeper(elem, container, color) {
         deeper(child, subGrid, stringToColour(container.id + '-' + elem.name))
     })
 
-    gridElem.addEventListener('click', (e) => {
-        e.preventDefault()
-        e.stopPropagation()
-        console.log('yeassss', elem.name)
-        gridElem.classList.add('active')
-        subGrid.classList.remove('hidden')
-    });
+    if (elem.drillDown) {
+        gridElem.addEventListener('click', (e) => {
+            e.preventDefault()
+            e.stopPropagation()
+            gridElem.classList.add('active')
+            subGrid.classList.remove('hidden')
+        });
+    }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
