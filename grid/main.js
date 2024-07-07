@@ -574,37 +574,25 @@ const stringToColour = (str) => {
       colour += value.toString(16).padStart(2, '0')
     }
     return colour
-  }
+}
 
-function deeper(elem, container, color) {
+function deeper(elem) {
     const gridElem = document.createElement('div');
     gridElem.classList = 'grid_item';
     gridElem.textContent = elem.name ? elem.name : elem;
-    gridElem.style.backgroundColor = color;
-    container.appendChild(gridElem);
-
-    const subGrid = document.createElement('div');
-    subGrid.id = container.id + '-' + elem.name
-    subGrid.classList = 'hidden grid'
-    gridElem.appendChild(subGrid);
+    
+    if (!elem.drillDown) {
+        gridContainer.appendChild(gridElem);
+    }
 
     elem.drillDown?.forEach(child => {
-        deeper(child, subGrid, stringToColour(container.id + '-' + elem.name))
+        deeper(child)
     })
-
-    if (elem.drillDown) {
-        gridElem.addEventListener('click', (e) => {
-            e.preventDefault()
-            e.stopPropagation()
-            gridElem.classList.add('active')
-            subGrid.classList.remove('hidden')
-        });
-    }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
     data.forEach(elem => {
-       deeper(elem, gridContainer, 'white')
+       deeper(elem)
     })
 });
 

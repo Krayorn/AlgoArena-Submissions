@@ -14,22 +14,19 @@
         .grid_item {
             border: 1px solid black;
             padding: 20px 10px;
-            width: 30%;
             margin-bottom: 20px;
             display: flex;
             flex-direction: column;
-            height: 20px;
+            height: auto;
+            flex-wrap: wrap;
+            justify-content: space-between;
         }
 
         .hidden {
             display: none;
         }
-
-        .active {
-            height: auto;
-            width: 100%;
-            flex-wrap: wrap;
-            justify-content: space-between;
+        .grid_item:hover >.grid>.grid_item {
+            background-color: red !important;
         }
     </style>
 </head>
