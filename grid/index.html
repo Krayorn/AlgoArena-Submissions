@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gridfinity</title>
+    <style>
+        .grid {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            transition: 1s;
+            transform: scale(1);
+        }
+
+        .grid_item {
+            border: 1px solid black;
+            padding: 20px 10px;
+            width: 30%;
+            margin-bottom: 20px;
+            display: flex;
+            flex-direction: column;
+            height: 20px;
+        }
+
+        .hidden {
+            transform: scale(0);
+            position: absolute;
+        }
+
+        .active {
+            height: auto;
+            width: 100%;
+            flex-wrap: wrap;
+            justify-content: space-between;
+        }
+    </style>
+</head>
+<body>
+    <main class="grid" id="grid"></main>
+    <script src="main.js"></script>
+</body>
+</html>
