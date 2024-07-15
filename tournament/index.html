@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Loser tournament</title>
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid black;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        button {
+            margin: 20px 0;
+            padding: 10px 20px;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Loser tournament</h1>
+    <button onclick="playTournament(participants)">Play a Tournament</button>
+    <table id="resultsTable">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Score</th>
+                <th>ELO</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Results will be appended here -->
+        </tbody>
+    </table>
+
+    <script>
+        const participants = [
+            { name: "Team 1", score: 0, elo: 1400 },
+            { name: "Team 2", score: 0, elo: 1000 },
+            { name: "Team 3", score: 0, elo: 700 },
+            { name: "Team 4", score: 0, elo: 900 },
+            { name: "Team 5", score: 0, elo: 1800 },
+            { name: "Team 6", score: 0, elo: 1500 },
+            { name: "Team 7", score: 0, elo: 1100 },
+            { name: "Team 8", score: 0, elo: 1300 },
+        ];
+
+        function playTournament(participants) {
+            let numberOfPlayers = participants.length;
+
+            // Rounds => round robin
+            let games = [];
+            for (let i = 0; i < numberOfPlayers - 1; i++) {
+                for (let j = i + 1; j < numberOfPlayers; j++) {
+                    games.push([participants[i].name, participants[j].name]);
+                }
+            }
+
+            // Play all the games
+            games.forEach(game => {
+                const player1 = participants.find(p => p.name === game[0]);
+                const player2 = participants.find(p => p.name === game[1]);
+                const m = (player1.elo - player2.elo) / 400;
+                const probability = 1 / (1 + 10 ** m);
+
+                let gameOdds = Math.random();
+                while (gameOdds === probability) {
+                    gameOdds = Math.random();
+                }
+
+                if (gameOdds > probability) {
+                    participants = participants.map(p => p.name === player1.name ? { ...p, score: p.score + Math.floor((probability) * 100) } : p);
+                } else {
+                    participants = participants.map(p => p.name === player2.name ? { ...p, score: p.score + Math.floor((1 - probability) * 100) } : p);
+                }
+            });
+
+            participants.sort((p1, p2) => p2.score - p1.score);
+
+            displayResults(participants);
+        }
+
+        function displayResults(participants) {
+            const tbody = document.getElementById('resultsTable').querySelector('tbody');
+            tbody.innerHTML = '';
+            participants.forEach(participant => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${participant.name}</td>
+                    <td>${participant.score}</td>
+                    <td>${participant.elo}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+    </script>
+</body>
+</html>
