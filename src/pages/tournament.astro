@@ -1,32 +1,16 @@
+---
+---
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Loser tournament</title>
-    <style>
-        table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        th, td {
-            border: 1px solid black;
-            padding: 8px;
-            text-align: left;
-        }
-        th {
-            background-color: #f2f2f2;
-        }
-        button {
-            margin: 20px 0;
-            padding: 10px 20px;
-            font-size: 16px;
-        }
-    </style>
 </head>
 <body>
     <h1>Loser tournament</h1>
-    <button onclick="playTournament(participants)">Play a Tournament</button>
+    <button id="playTournament">Play a Tournament</button>
     <table id="resultsTable">
         <thead>
             <tr>
@@ -100,6 +84,28 @@
                 tbody.appendChild(row);
             });
         }
+
+        document.getElementById('playTournament').addEventListener('click', () => playTournament(participants));
     </script>
 </body>
 </html>
+
+<style is:global>
+    table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    th, td {
+        border: 1px solid black;
+        padding: 8px;
+        text-align: left;
+    }
+    th {
+        background-color: #f2f2f2;
+    }
+    button {
+        margin: 20px 0;
+        padding: 10px 20px;
+        font-size: 16px;
+    }
+</style>
