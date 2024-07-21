@@ -1,0 +1,27 @@
+body {
+    font-family: Arial, sans-serif;
+    padding: 20px;
+}
+
+#controls {
+    margin-bottom: 20px;
+}
+
+button {
+    margin-right: 10px;
+}
+
+#gates {
+    margin-top: 20px;
+}
+
+.gate {
+    border: 1px solid #ccc;
+    padding: 10px;
+    margin-bottom: 10px;
+    background-color: #f9f9f9;
+}
+
+.gate h3 {
+    margin-top: 0;
+}
