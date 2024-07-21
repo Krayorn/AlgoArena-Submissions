@@ -1,7 +1,6 @@
 let gates = [{id: 0, inputs: [], type: "input1", output: false}, {id: 1, inputs: [], type: "input2", output: false}, {id: 2, type: "output", inputs: [null], output: null}]
 let input1 = false;
 let input2 = false;
-const outputValueSpan = document.getElementById('outputValue');
 
 calculateOutput(gates)
 displayGates(gates)
@@ -10,6 +9,8 @@ displayGates(gates)
 document.getElementById('addOR').addEventListener('click', () => addGate('OR'));
 document.getElementById('addAND').addEventListener('click', () => addGate('AND'));
 document.getElementById('addNOT').addEventListener('click', () => addGate('NOT'));
+document.getElementById('addNAND').addEventListener('click', () => addGate('NAND'));
+document.getElementById('addXOR').addEventListener('click', () => addGate('XOR'));
 document.getElementById('clear').addEventListener('click', clearCircuit);
 
 let id = 3;
@@ -35,25 +36,37 @@ function displayGates(gates) {
         const gateElement = document.createElement('div');
         gateElement.className = 'gate';
 
-        let inputsText = gate.inputs.map((input, index) => `Input ${index}: ${input !== null ? input : 'None'}`).join(', ');
+        let inputsText = gate.inputs.map((input, index) => 
+            `<span class="input">Input ${index}: ${input !== null ? input : 'None'}</span>`
+        ).join(' ');
+        
         let outputText = gate.output !== null ? gate.output.toString() : 'Not calculated';
 
+        if (gate.output !== null) {
+            gateElement.classList.add(gate.output ? 'true' : 'false');
+        }
+
         gateElement.innerHTML = `
-            <h3>${gate.type.toUpperCase()} (ID: ${gate.id})</h3>
-            <p>Inputs: ${inputsText}</p>
-            <p>Output: ${outputText}</p>
+            <div class="gate-header">
+                <h3>${gate.type.toUpperCase()} <span class="gate-id">(ID: ${gate.id})</span></h3>
+            </div>
+            <div class="gate-body">
+                <p>Inputs: ${inputsText}</p>
+                <p>Output: <span class="output ${gate.output !== null ? (gate.output ? 'true' : 'false') : ''}">${outputText}</span></p>
+            </div>
         `;
 
         // Add toggle for input gates
         if (gate.type === 'input1' || gate.type === 'input2') {
             const toggleButton = document.createElement('button');
+            toggleButton.className = 'toggle-btn';
             toggleButton.textContent = gate.output ? 'Turn OFF' : 'Turn ON';
             toggleButton.addEventListener('click', () => {
                 gate.output = !gate.output;
                 calculateOutput();
                 displayGates(gates);
             });
-            gateElement.appendChild(toggleButton);
+            gateElement.querySelector('.gate-body').appendChild(toggleButton);
         }
 
         // Add link options for inputs (excluding input and output gates)
@@ -86,12 +99,13 @@ function displayGates(gates) {
                 });
             });
 
-            gateElement.appendChild(linkForm);
+            gateElement.querySelector('.gate-body').appendChild(linkForm);
         }
 
         gatesDiv.appendChild(gateElement);
     });
 }
+
 function link(id1, id2, outputIdx) {
     const inputGate = gates.find(g => g.id === id2)
 
@@ -104,12 +118,6 @@ function calculateOutput() {
             gate.output = null
         }
     });
-
-    const output = gates.find(g => g.type === "output")
-    if (output.inputs.some(v => v === null)) {
-        outputValueSpan.textContent = 'Output not connected to any input';
-        return
-    }
 
     let breakNeeded = false
     let c = 0
@@ -131,7 +139,7 @@ function calculateOutput() {
 
             if (gate.type === "output") {
                 const input1Value = gates.find(g => g.id === gate.inputs[0])?.output
-                if (input1Value !== null) {
+                if (input1Value !== null && input1Value !== undefined) {
                     breakNeeded = true
                     gate.output = input1Value
                 }
@@ -142,7 +150,7 @@ function calculateOutput() {
             const input1Value = gates.find(g => g.id === gate.inputs[0])?.output
             const input2Value = gates.find(g => g.id === gate.inputs[1])?.output         
 
-            if ((input1Value !== null && gate.type === "NOT") || (input1Value !== null && input2Value !== null) ) {
+            if ((input1Value !== undefined && gate.type === "NOT") || (input1Value !== undefined && input2Value !== undefined) ) {
                 switch (gate.type) {
                     case 'AND':
                         gate.output = input1Value && input2Value;
@@ -153,6 +161,12 @@ function calculateOutput() {
                     case 'NOT':
                         gate.output = !input1Value;
                         break;
+                    case 'NAND':
+                        gate.output = !(input1Value && input2Value);
+                        break;
+                    case 'XOR':
+                        gate.output = input1Value !== input2Value;
+                        break;
                 }
                 c = 0;
             }
@@ -161,11 +175,6 @@ function calculateOutput() {
             break
         }
     }
-
-    
-    const outputGate = gates.find(g => g.id === 2)
-    let result = outputGate.output;
-    outputValueSpan.textContent = result ? 'ON' : 'OFF';
 }
 
 function getInputValue(input) {
@@ -180,6 +189,6 @@ function clearCircuit() {
     gates = [{id: 0, inputs: [], type: "input1", output: false}, {id: 1, inputs: [], type: "input2", output: false}, {id: 2, type: "output", inputs: [null], output: null}]
     input1 = false;
     input2 = false;
-    displayGates(gates)
     calculateOutput()
+    displayGates(gates)
 }

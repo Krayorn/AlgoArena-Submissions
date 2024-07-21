@@ -5,23 +5,144 @@ body {
 
 #controls {
     margin-bottom: 20px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
 }
 
-button {
-    margin-right: 10px;
+.control-btn {
+    background-color: #4CAF50;
+    border: none;
+    color: white;
+    padding: 10px 20px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    margin: 4px 2px;
+    transition-duration: 0.4s;
+    cursor: pointer;
+    border-radius: 5px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    outline: none;
+}
+
+.control-btn:hover {
+    background-color: #45a049;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.control-btn:active {
+    background-color: #3e8e41;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    transform: translateY(1px);
+}
+
+.clear-btn {
+    background-color: #f44336;
+}
+
+.clear-btn:hover {
+    background-color: #d32f2f;
+}
+
+.clear-btn:active {
+    background-color: #b71c1c;
+}
+
+.icon {
+    margin-right: 5px;
+    font-size: 18px;
 }
 
 #gates {
-    margin-top: 20px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
 }
 
 .gate {
     border: 1px solid #ccc;
-    padding: 10px;
-    margin-bottom: 10px;
+    padding: 5px;
     background-color: #f9f9f9;
+    border-radius: 3px;
+    width: calc(25% - 10px);
+    min-width: 200px;
+    font-size: 0.9em;
 }
 
-.gate h3 {
-    margin-top: 0;
+.gate.true {
+    background-color: #e6ffe6;
+    border-color: #00a000;
+}
+
+.gate.false {
+    background-color: #ffe6e6;
+    border-color: #a00000;
+}
+
+.gate-header {
+    background-color: #f0f0f0;
+    padding: 5px;
+    border-bottom: 1px solid #ccc;
+}
+
+.gate-header h3 {
+    margin: 0;
+    font-size: 1em;
+}
+
+.gate-id {
+    font-size: 0.8em;
+    color: #666;
+}
+
+.gate-body {
+    padding: 5px;
+}
+
+.input, .output {
+    display: inline-block;
+    padding: 1px 3px;
+    border-radius: 2px;
+    margin-right: 3px;
+    font-size: 0.8em;
+}
+
+.input {
+    background-color: #e0e0e0;
+}
+
+.output {
+    font-weight: bold;
+}
+
+.output.true {
+    background-color: #a0ffa0;
+}
+
+.output.false {
+    background-color: #ffa0a0;
+}
+
+.toggle-btn {
+    margin-top: 5px;
+    padding: 3px 6px;
+    cursor: pointer;
+    font-size: 0.8em;
+}
+
+.link-form {
+    margin-top: 5px;
+}
+
+.link-form label {
+    display: block;
+    margin-bottom: 3px;
+    font-size: 0.8em;
+}
+
+.link-form select {
+    margin-left: 5px;
+    font-size: 0.8em;
 }

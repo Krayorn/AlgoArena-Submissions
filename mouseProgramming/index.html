@@ -8,15 +8,26 @@
 </head>
 <body>
     <div id="controls">
-        <button id="addOR">Add OR</button>
-        <button id="addAND">Add AND</button>
-        <button id="addNOT">Add NOT</button>
-        <button id="clear">Clear Circuit</button>
+        <button id="addOR" class="control-btn">
+            <span class="icon">➕</span> OR
+        </button>
+        <button id="addAND" class="control-btn">
+            <span class="icon">➕</span> AND
+        </button>
+        <button id="addNOT" class="control-btn">
+            <span class="icon">➕</span> NOT
+        </button>
+        <button id="addNAND" class="control-btn">
+            <span class="icon">➕</span> NAND
+        </button>
+        <button id="addXOR" class="control-btn">
+            <span class="icon">➕</span> XOR
+        </button>
+        <button id="clear" class="control-btn clear-btn">
+            <span class="icon">🗑️</span> Clear Circuit
+        </button>
     </div>
     <div id="gates"></div>
-    <div id="result">
-        <p>Output: <span id="outputValue">-</span></p>
-    </div>
     <script src="main.js"></script>
 </body>
 </html>
