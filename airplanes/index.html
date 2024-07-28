@@ -8,12 +8,33 @@
         canvas {
             border: 1px solid black;
         }
-        #controls, #timerDisplay {
+        #controls {
             margin-top: 10px;
+            display: flex;
+            flex-direction: column;
         }
         #timerDisplay {
             font-size: 18px;
             font-weight: bold;
+            margin-top: 40px;
+            margin-bottom: 40px;
+        }
+
+        button {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: orange;
+            border: none;
+            border-radius: 20px;
+        }
+
+        body {
+            color: #d4cfcf;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            background-color: #2c3037;
         }
     </style>
 </head>
@@ -21,14 +42,21 @@
     <div id="timerDisplay">Time: 0.0s</div>
     <canvas id="airplaneCanvas" width="800" height="400"></canvas>
     <div id="controls">
-        <label for="strategySelect">Pick a strategy:</label>
-        <select id="strategySelect">
-            <option value="random">Random</option>
-            <option value="backToFront4">Back to Front (4 board groups)</option>
-            <option value="steffen">Steffen boarding method</option>
-            <option value="steffenWeak">Steffen modified boarding method</option>
-        </select>
+        <div>
+            <label for="strategySelect">Boarding strategy:</label>
+            <select id="strategySelect">
+                <option value="random">Random</option>
+                <option value="backToFront4">Back to Front (4 board groups)</option>
+                <option value="steffen">Steffen boarding method</option>
+                <option value="steffenWeak">Steffen modified boarding method</option>
+            </select>
+        </div>
         <button id="startButton">Start Boarding</button>
+        <div>
+            <p>Passengers in green are seated.</p>
+            <p>Passengers in red are storing their carry-on bags.</p>
+            <p>Passengers in blue are on their way to their seat.</p>
+        </div>
     </div>
     <script>
         const canvas = document.getElementById('airplaneCanvas');
@@ -141,6 +169,9 @@
 
         function drawPassengers() {
             passengers.forEach(passenger => {
+                if (passenger.x === 0) {
+                    return
+                }
                 ctx.fillStyle = passenger.bagTimer > 0 ? 'red' : passenger.seated ? 'green' : 'blue';
                 ctx.beginPath();
                 ctx.arc(passenger.x, passenger.y, 5, 0, Math.PI * 2);
