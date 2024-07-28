@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Airplane Boarding Simulator</title>
+    <style>
+        canvas {
+            border: 1px solid black;
+        }
+        #controls, #timerDisplay {
+            margin-top: 10px;
+        }
+        #timerDisplay {
+            font-size: 18px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div id="timerDisplay">Time: 0.0s</div>
+    <canvas id="airplaneCanvas" width="800" height="400"></canvas>
+    <div id="controls">
+        <label for="strategySelect">Pick a strategy:</label>
+        <select id="strategySelect">
+            <option value="random">Random</option>
+            <option value="backToFront4">Back to Front (4 board groups)</option>
+            <option value="steffen">Steffen boarding method</option>
+            <option value="steffenWeak">Steffen modified boarding method</option>
+        </select>
+        <button id="startButton">Start Boarding</button>
+    </div>
+    <script>
+        const canvas = document.getElementById('airplaneCanvas');
+        const ctx = canvas.getContext('2d');
+        const startButton = document.getElementById('startButton');
+        const strategySelect = document.getElementById('strategySelect');
+        const timerDisplay = document.getElementById('timerDisplay');
+
+        const airplane = {
+            rows: 20,
+            seatsPerRow: 6,
+            aisleWidth: 20,
+            seatWidth: 30,
+            seatHeight: 20
+        };
+
+        const seatsY = [88, 119, 150, 230, 261, 292];
+        const aisleY = 205; // Middle of the aisle
+        let passengers = [];
+        let startTime;
+        let timerInterval;
+
+        function createPassengers() {
+            passengers = [];
+            const n = airplane.rows * airplane.seatsPerRow;
+            for (let i = 0; i < n; i++) {
+                passengers.push({
+                    x: 0,
+                    y: aisleY,
+                    row: Math.floor(i / airplane.seatsPerRow),
+                    seat: i % airplane.seatsPerRow,
+                    seated: false,
+                    bagTimer: -1,
+                });
+            }
+        }
+
+        function applyBoardingStrategy() {
+            const strategy = strategySelect.value;
+            switch (strategy) {
+                case 'random':
+                    shuffle(passengers);
+                    break;
+                case 'backToFront4':
+                    passengers = passengers.map(p => ({...p, boardingGroup: Math.floor(4 - (p.row / (airplane.rows / 4)))}))
+                    shuffle(passengers);
+                    passengers.sort((a, b) => a.boardingGroup - b.boardingGroup)
+                    break;
+                case 'steffen':
+                    let currentRowOrder = [19, 18]
+                    let currentRow = 19
+                    let currentRowIndex = 0
+                    let currentSeatOrder = [5, 0, 4, 1, 3, 2]
+                    let currentSeat = 0
+                    for (let i = 0; i < passengers.length; i+=2) {
+                        passengers[i].row = currentRow
+                        passengers[i].seat = currentSeatOrder[currentSeat]
+                        passengers[i+1].row = currentRow
+                        passengers[i+1].seat = currentSeatOrder[currentSeat+1]
+
+                        currentRow = currentRow-2
+                        if (currentRow <= -1) {
+                            currentRowIndex++
+                            if (currentRowIndex === 2) {
+                                currentSeat+=2
+                                currentRowIndex = 0
+                            }
+                            currentRow = currentRowOrder[currentRowIndex]
+                        }
+                    }
+                    break;
+                case 'steffenWeak':
+                    let modifiedRowSequence = [19, 19, 18, 18]
+                    let modifiedRowIndex = 0
+                    let modifiedRow = 19
+                    let modifedSeatOrderSeq = [[0, 1, 2], [3, 4, 5], [0, 1, 2], [3, 4, 5]]
+                    for (let i = 0; i < passengers.length; i+=3) {
+                        shuffle(modifedSeatOrderSeq[modifiedRowIndex])
+                        passengers[i].row = modifiedRow
+                        passengers[i].seat = modifedSeatOrderSeq[modifiedRowIndex][0]
+                        passengers[i+1].row = modifiedRow
+                        passengers[i+1].seat = modifedSeatOrderSeq[modifiedRowIndex][1]
+                        passengers[i+2].row = modifiedRow
+                        passengers[i+2].seat = modifedSeatOrderSeq[modifiedRowIndex][2]
+
+
+                        modifiedRow = modifiedRow-2
+                        if (modifiedRow <= -1) {
+                            modifiedRowIndex++
+                            modifiedRow = modifiedRowSequence[modifiedRowIndex]
+                        }
+                    }
+                    break;
+            }
+        }
+
+        function drawAirplane() {
+            ctx.fillStyle = '#f0f0f0';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            for (let row = 0; row < airplane.rows; row++) {
+                for (let seat = 0; seat < airplane.seatsPerRow; seat++) {
+                    const x = 50 + row * (airplane.seatWidth + 5);
+                    const y = seatsY[seat];
+                    ctx.fillStyle = '#ddd';
+                    ctx.fillRect(x, y, airplane.seatHeight, airplane.seatWidth);
+                }
+            }
+        }
+
+        function drawPassengers() {
+            passengers.forEach(passenger => {
+                ctx.fillStyle = passenger.bagTimer > 0 ? 'red' : passenger.seated ? 'green' : 'blue';
+                ctx.beginPath();
+                ctx.arc(passenger.x, passenger.y, 5, 0, Math.PI * 2);
+                ctx.fill();
+            });
+        }
+
+        function canMoveForward(passenger) {
+            return !passengers.some(p => {
+                if (passenger.seat === p.seat && passenger.row === p.row) {
+                    return false
+                }
+                if (p.seated) {
+                    return false
+                }
+                if (p.x > passenger.x && p.x - passenger.x <= 15 && Math.abs(passenger.y - p.y) < 20) {
+                    return true
+                }
+                return false
+            })
+        }
+
+        function movePassengers() {
+            passengers.forEach((passenger) => {
+                if (!passenger.seated) {
+                    const targetX = 50 + passenger.row * (airplane.seatWidth + 5) + airplane.seatHeight / 2;
+                    const targetY = seatsY[passenger.seat] + airplane.seatWidth / 2;
+
+                    if (Math.abs(passenger.x - targetX) > 1) {
+                        if (canMoveForward(passenger)) {
+                            passenger.x += 3;
+                        }    
+                    } else if (Math.abs(passenger.y - targetY) > 1) {
+                        if (passenger.bagTimer === -1) {
+                            passenger.bagTimer = 50
+                        } else if (passenger.bagTimer > 0)
+                        {
+                            passenger.bagTimer--
+                        } else {   
+                            passenger.y += passenger.y - targetY > 0 ? -1 : 1;
+                        }
+                    } else {
+                        passenger.seated = true;
+                    }
+                }
+            });
+        }
+
+        function startTimer() {
+            startTime = Date.now();
+            timerInterval = setInterval(updateTimer, 100);
+        }
+
+        function stopTimer() {
+            clearInterval(timerInterval);
+        }
+
+        function updateTimer() {
+            const elapsedTime = (Date.now() - startTime) / 1000;
+            timerDisplay.textContent = `Time: ${elapsedTime.toFixed(1)}s`;
+        }
+
+        function simulate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawAirplane();
+            movePassengers();
+            drawPassengers();
+
+            if (passengers.some(p => !p.seated)) {
+                requestAnimationFrame(simulate);
+            } else {
+                stopTimer();
+            }
+        }
+
+        startButton.addEventListener('click', () => {
+            createPassengers();
+            applyBoardingStrategy();
+            startTimer();
+            simulate();
+        });
+
+        function shuffle(array) {
+            let currentIndex = array.length;
+            while (currentIndex != 0) {
+                let randomIndex = Math.floor(Math.random() * currentIndex);
+                currentIndex--;
+                [array[currentIndex], array[randomIndex]] = [
+                array[randomIndex], array[currentIndex]];
+            }
+        }
+
+        drawAirplane();
+    </script>
+</body>
+</html>
