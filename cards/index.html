@@ -4,20 +4,31 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dev cards</title>
-    <script src="https://unpkg.com/@rive-app/canvas@2.17.3"></script>
+    <script src="https://unpkg.com/@rive-app/canvas@2.19.6"></script>
     <style>
-        img {
-            width: 433px;
-            height: 629px;
+        #container-img{
             position: absolute;
-            left: 291px;
-            top: 180px;
+            width: 215px;
+            height: 316px;
+            left: 150px;
+            top: 93px;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            
+            img {
+                width: 100%;
+            }
         }
     </style>
 </head>
 <body>
-    <img src="./test.jpg">
+    <div id="container-img">
+        <img src="./test.png" />
+    </div>
     <canvas id="canvas" width="500" height="500"></canvas>
+    <button id="contour" >Cycle contour</button>
+    <button id="bg" >Cycle Bg</button>
     <script src="main.js"></script>
 </body>
 </html>
