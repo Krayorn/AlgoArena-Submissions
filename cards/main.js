@@ -16,13 +16,19 @@ const r = new rive.Rive({
         let contourNumber = inputs.find(i => i.name === 'Contour');
 
         contourButton.onclick = () => {
-            contourNumber.value = contourNumber.value === 1 ? 0 : 1
+            contourNumber.value++
+            if (contourNumber.value > 2) {
+                contourNumber.value = 0
+            }
         }
 
         let bgNumber = inputs.find(i => i.name === 'Bg');
 
         bgButton.onclick = () => {
-            bgNumber.value = bgNumber.value === 1 ? 0 : 1
+            bgNumber.value++
+            if (bgNumber.value > 2) {
+                bgNumber.value = 0
+            }
         }
     },
 });
