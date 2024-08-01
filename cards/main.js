@@ -1,5 +1,5 @@
 const r = new rive.Rive({
-    src: "./superdev_cards.riv",
+    src: "https://krayorn.github.io/AlgoArena-Submissions/cards/superdev_cards.riv",
     // OR the path to a discoverable and public Rive asset
     // src: '/public/example.riv',
     canvas: document.getElementById("canvas"),
