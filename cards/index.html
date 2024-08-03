@@ -25,11 +25,22 @@
 </head>
 <body>
     <div id="container-img">
-        <img src="./zuckSurf.png" />
+        <!-- <img src="./zuckSurf.png" /> -->
     </div>
     <canvas id="canvas" width="500" height="500"></canvas>
-    <button id="contour" >Cycle contour</button>
-    <button id="bg" >Cycle Bg</button>
+    
+    <div class="slider-container">
+        <button class="arrow-btn" id="prev-btn-bg">&lt;</button>
+        <div class="slider-content" id="current-bg"></div>
+        <button class="arrow-btn" id="next-btn-bg">&gt;</button>
+    </div>
+
+    <div class="slider-container">
+        <button class="arrow-btn" id="prev-btn-border">&lt;</button>
+        <div class="slider-content" id="current-border"></div>
+        <button class="arrow-btn" id="next-btn-border">&gt;</button>
+    </div>
+
     <script src="main.js"></script>
 </body>
 </html>

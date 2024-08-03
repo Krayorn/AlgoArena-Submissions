@@ -1,5 +1,14 @@
-const contourButton = document.querySelector("#contour")
-const bgButton = document.querySelector("#bg")
+const background = ['Comic Blue', 'Comic Orange', 'Matrix', 'CPU'];
+const borders = ['Purple Cadre', 'Green Cadre', 'Purple no corner'];
+
+const prevBtnBg = document.getElementById('prev-btn-bg');
+const nextBtnBg = document.getElementById('next-btn-bg');
+const currentBg = document.getElementById('current-bg');
+
+
+const prevBtnBorder = document.getElementById('prev-btn-border');
+const nextBtnBorder = document.getElementById('next-btn-border');
+const currentBorder = document.getElementById('current-border');
 
 
 const r = new rive.Rive({
@@ -10,25 +19,43 @@ const r = new rive.Rive({
     autoplay: true,
     stateMachines: "State Machine 1",
     onLoad: () => {
-        // Get the inputs via the name of the state machine
         const inputs = r.stateMachineInputs('State Machine 1');
-        // Find the input you want to set a value for, or trigger
+
         let contourNumber = inputs.find(i => i.name === 'Contour');
-
-        contourButton.onclick = () => {
-            contourNumber.value++
-            if (contourNumber.value > 2) {
-                contourNumber.value = 0
-            }
-        }
-
         let bgNumber = inputs.find(i => i.name === 'Bg');
 
-        bgButton.onclick = () => {
-            bgNumber.value++
-            if (bgNumber.value > 2) {
-                bgNumber.value = 0
-            }
-        }
+        prevBtnBg.addEventListener('click', () => {
+            bgNumber.value = (bgNumber.value - 1 + background.length) % background.length;
+            updateBg(bgNumber.value);
+        });
+        
+        nextBtnBg.addEventListener('click', () => {
+            bgNumber.value = (bgNumber.value + 1) % background.length;
+            updateBg(bgNumber.value);
+        });
+
+
+        prevBtnBorder.addEventListener('click', () => {
+            contourNumber.value = (contourNumber.value - 1 + borders.length) % borders.length;
+            updateBorder(contourNumber.value);
+        });
+        
+        nextBtnBorder.addEventListener('click', () => {
+            contourNumber.value = (contourNumber.value + 1) % borders.length;
+            updateBorder(contourNumber.value);
+        });
+
     },
 });
+
+
+
+function updateBg(index) {
+    currentBg.textContent = background[index];
+}
+function updateBorder(index) {
+    currentBorder.textContent = borders[index];
+}
+
+updateBg(2);
+updateBorder(2);
