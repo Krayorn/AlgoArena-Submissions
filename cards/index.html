@@ -42,6 +42,13 @@
             display: flex;
             align-items: center;
             pointer-events: none;
+            transition: transform 0.2s ease-out;
+            z-index: 1;
+        }
+
+        #canvas {
+            position: relative;
+            overflow: hidden;
         }
 
         #container-img img {
@@ -122,6 +129,89 @@
             display: none;
         }
 
+        #settings {
+         display: flex;
+         flex-direction: column;   
+        }
+
+        .control-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .control-container label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: #00ff00;
+        }
+
+        .control-container input[type="range"] {
+            -webkit-appearance: none;
+            background: #2a2a2a;
+            outline: none;
+            opacity: 0.7;
+            transition: opacity 0.2s;
+            border-radius: 5px;
+            width: 200px;
+        }
+
+        .control-container input[type="range"]:hover {
+            opacity: 1;
+        }
+
+        .control-container input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            background: #00ffff;
+            cursor: pointer;
+            border-radius: 50%;
+        }
+
+        .control-container input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            background: #00ffff;
+            cursor: pointer;
+            border-radius: 50%;
+        }
+
+        .text-input-container {
+            margin: 20px 0px;
+        }
+
+        .text-input-container input {
+            width: 100%;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            background-color: #2a2a2a;
+            color: #00ff00;
+            font-size: 16px;
+        }
+
+        .text-input-container input:focus {
+            outline: none;
+            box-shadow: 0 0 5px #00ffff;
+        }
+
+        #card-name-display {
+            position: absolute;
+            top: 40px;
+            width: 100%;
+            font-size: 30px;
+            font-weight: bold;
+            color: #00ff00;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            transition: transform 0.2s ease-out;
+            text-align: center;
+            z-index: 2;
+        }
+
     </style>
 </head>
 <body>
@@ -131,27 +221,47 @@
             <div id="container-img">
                 <img id="selected-image" src="" />
             </div>
+            <div id="card-name-display"></div>
             <canvas id="canvas" width="500" height="500"></canvas>
         </div>
-        <div class="sliders-container">
-            <div class="file-input-container">
-                <label for="image-upload">Choose Image</label>
-                <input type="file" id="image-upload" accept="image/*">
+        <div id="settings">
+            <div class="sliders-container">
+                <div class="file-input-container">
+                    <label for="image-upload">Choose Image</label>
+                    <input type="file" id="image-upload" accept="image/*">
+                </div>
+                <div class="slider-container">
+                    <button class="arrow-btn" id="prev-btn-bg">&lt;</button>
+                    <div class="slider-content" id="current-bg">Background</div>
+                    <button class="arrow-btn" id="next-btn-bg">&gt;</button>
+                </div>
+                <div class="slider-container">
+                    <button class="arrow-btn" id="prev-btn-border">&lt;</button>
+                    <div class="slider-content" id="current-border">Border</div>
+                    <button class="arrow-btn" id="next-btn-border">&gt;</button>
+                </div>
+                <div class="slider-container">
+                    <button class="arrow-btn" id="prev-btn-txt">&lt;</button>
+                    <div class="slider-content" id="current-txt">Text</div>
+                    <button class="arrow-btn" id="next-btn-txt">&gt;</button>
+                </div>
             </div>
-            <div class="slider-container">
-                <button class="arrow-btn" id="prev-btn-bg">&lt;</button>
-                <div class="slider-content" id="current-bg">Background</div>
-                <button class="arrow-btn" id="next-btn-bg">&gt;</button>
+            <div class="text-input-container">
+                <input type="text" id="card-name-input" placeholder="Enter your card name">
             </div>
-            <div class="slider-container">
-                <button class="arrow-btn" id="prev-btn-border">&lt;</button>
-                <div class="slider-content" id="current-border">Border</div>
-                <button class="arrow-btn" id="next-btn-border">&gt;</button>
-            </div>
-            <div class="slider-container">
-                <button class="arrow-btn" id="prev-btn-txt">&lt;</button>
-                <div class="slider-content" id="current-txt">Text</div>
-                <button class="arrow-btn" id="next-btn-txt">&gt;</button>
+            <div class="control-container">
+                <label>
+                    Horizontal position:
+                    <input type="range" id="left-position" min="0" max="385" value="200">
+                </label>
+                <label>
+                    Vertical position:
+                    <input type="range" id="top-position" min="0" max="284" value="134">
+                </label>
+                <label>
+                    Width:
+                    <input type="range" id="image-width" min="50" max="500" value="115">
+                </label>
             </div>
         </div>
     </div>
@@ -160,6 +270,12 @@
         document.addEventListener('DOMContentLoaded', function() {
             const imageUpload = document.getElementById('image-upload');
             const selectedImage = document.getElementById('selected-image');
+            const containerImg = document.getElementById('container-img');
+
+            const leftPosition = document.getElementById('left-position');
+            const topPosition = document.getElementById('top-position');
+            const imageWidth = document.getElementById('image-width');
+
 
             imageUpload.addEventListener('change', function(event) {
                 const file = event.target.files[0];
@@ -171,6 +287,62 @@
                     reader.readAsDataURL(file);
                 }
             });
+
+            const cardNameInput = document.getElementById('card-name-input');
+            const cardNameDisplay = document.getElementById('card-name-display');
+
+            cardNameInput.addEventListener('input', function() {
+                cardNameDisplay.textContent = this.value;
+            });
+
+            function updateImagePosition() {
+                containerImg.style.left = leftPosition.value + 'px';
+                containerImg.style.top = topPosition.value + 'px';
+            }
+
+            function updateImageSize() {
+                selectedImage.style.width = imageWidth.value + 'px';
+                containerImg.style.width = imageWidth.value + 'px';
+                containerImg.style.height = 'auto';
+            }
+
+            leftPosition.addEventListener('input', updateImagePosition);
+            topPosition.addEventListener('input', updateImagePosition);
+            imageWidth.addEventListener('input', updateImageSize);
+
+            // Initialize position and size
+            updateImagePosition();
+            updateImageSize();
+
+            function handleParallax(e) {
+                const canvasRect = canvas.getBoundingClientRect();
+                const centerX = canvasRect.left + canvasRect.width / 2;
+                const centerY = canvasRect.top + canvasRect.height / 2;
+                
+                const mouseX = e.clientX;
+                const mouseY = e.clientY;
+                
+                const deltaX = (mouseX - centerX) / canvasRect.width;
+                const deltaY = (mouseY - centerY) / canvasRect.height;
+                
+                const maxShift = 15; // Maximum pixel shift for parallax
+                
+                const shiftX = deltaX * maxShift;
+                const shiftY = deltaY * maxShift;
+                
+                containerImg.style.transform = `translate(${shiftX}px, ${shiftY}px)`;
+                cardNameDisplay.style.transform = `translate(${shiftX * 0.5}px, ${shiftY * 0.5}px)`;
+            }
+
+            const canvas = document.getElementById("canvas")
+
+            canvas.addEventListener('mousemove', handleParallax);
+            canvas.addEventListener('mouseleave', () => {
+                containerImg.style.transform = 'translate(0, 0)';
+                cardNameDisplay.style.transform = 'translate(0, 0)';
+
+            });
+
         });
     </script>
 </body>

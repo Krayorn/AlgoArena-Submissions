@@ -1,6 +1,6 @@
 const background = ['Comic Blue', 'Comic Orange', 'Matrix', 'Matrix light', 'Space', 'Rocks'];
 const borders = ['Purple Cadre', 'Green Cadre', 'Purple no corner'];
-const txts = ['Back-end', 'Front-End'];
+const txts = ['Back-end', 'Front-End', 'Dev-Ops', 'Product Manager', 'FullStack', 'Scrum Master'];
 
 const prevBtnBg = document.getElementById('prev-btn-bg');
 const nextBtnBg = document.getElementById('next-btn-bg');
@@ -67,8 +67,6 @@ const r = new rive.Rive({
 
     },
 });
-
-console.log(currentText)
 
 function updateBg(index) {
     currentBg.textContent = background[index];
