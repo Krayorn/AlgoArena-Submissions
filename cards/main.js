@@ -1,5 +1,6 @@
-const background = ['Comic Blue', 'Comic Orange', 'Matrix', 'CPU'];
+const background = ['Comic Blue', 'Comic Orange', 'Matrix', 'Matrix light', 'Space', 'Rocks'];
 const borders = ['Purple Cadre', 'Green Cadre', 'Purple no corner'];
+const txts = ['Back-end', 'Front-End'];
 
 const prevBtnBg = document.getElementById('prev-btn-bg');
 const nextBtnBg = document.getElementById('next-btn-bg');
@@ -9,6 +10,10 @@ const currentBg = document.getElementById('current-bg');
 const prevBtnBorder = document.getElementById('prev-btn-border');
 const nextBtnBorder = document.getElementById('next-btn-border');
 const currentBorder = document.getElementById('current-border');
+
+const prevBtnText = document.getElementById('prev-btn-txt');
+const nextBtnText = document.getElementById('next-btn-txt');
+const currentText = document.getElementById('current-txt');
 
 
 const r = new rive.Rive({
@@ -23,6 +28,10 @@ const r = new rive.Rive({
 
         let contourNumber = inputs.find(i => i.name === 'Contour');
         let bgNumber = inputs.find(i => i.name === 'Bg');
+        let txtNumber = inputs.find(i => i.name === 'Text');
+        
+        bgNumber.value = 3
+        updateBg(3)
 
         prevBtnBg.addEventListener('click', () => {
             bgNumber.value = (bgNumber.value - 1 + background.length) % background.length;
@@ -45,10 +54,21 @@ const r = new rive.Rive({
             updateBorder(contourNumber.value);
         });
 
+
+        prevBtnText.addEventListener('click', () => {
+            txtNumber.value = (txtNumber.value - 1 + txts.length) % txts.length;
+            updateText(txtNumber.value);
+        });
+        
+        nextBtnText.addEventListener('click', () => {
+            txtNumber.value = (txtNumber.value + 1) % txts.length;
+            updateText(txtNumber.value);
+        });
+
     },
 });
 
-
+console.log(currentText)
 
 function updateBg(index) {
     currentBg.textContent = background[index];
@@ -56,6 +76,9 @@ function updateBg(index) {
 function updateBorder(index) {
     currentBorder.textContent = borders[index];
 }
+function updateText(index) {
+    currentText.textContent = txts[index];
+}
 
-updateBg(2);
 updateBorder(2);
+updateText(0);

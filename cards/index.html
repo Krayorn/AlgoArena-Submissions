@@ -6,41 +6,172 @@
     <title>Dev cards</title>
     <script src="https://unpkg.com/@rive-app/canvas@2.19.6"></script>
     <style>
-        #container-img{
+        body {
+            background-color: #1a1a1a;
+            color: #fff;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+        }
+
+        h1 {
+            color: #00ff00;
+            text-shadow: 0 0 5px #00ff00;
+            text-align: center;
+        }
+
+        #left {
+            position: relative;
+        }
+
+        .main-container {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            justify-content: space-around;
+        }
+
+        #container-img {
             position: absolute;
-            width: 115px;
-            height: 216px;
-            left: 200px;
-            top: 134px;
+            width: 20%;
+            height: 20%;
+            left: 40%;
+            top: 40%;
             overflow: hidden;
             display: flex;
             align-items: center;
             pointer-events: none;
-            
-            img {
-                width: 100%;
-            }
         }
+
+        #container-img img {
+            width: 100%;
+        }
+
+        #canvas {
+            border: 2px solid #00ff00;
+            box-shadow: 0 0 10px #00ff00;
+        }
+
+        .sliders-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .slider-container {
+            display: flex;
+            align-items: center;
+            background-color: #2a2a2a;
+            border-radius: 25px;
+            padding: 5px;
+            box-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+            width: fit-content;
+            width: 300px;
+            justify-content: space-between;
+        }
+
+        .arrow-btn {
+            background-color: #00ffff;
+            color: #1a1a1a;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            font-size: 18px;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: background-color 0.3s, box-shadow 0.3s;
+        }
+
+        .arrow-btn:hover {
+            background-color: #00cccc;
+            box-shadow: 0 0 15px #00ffff;
+        }
+
+        .slider-content {
+            margin: 0 15px;
+            font-size: 18px;
+            font-weight: bold;
+            color: #00ff00;
+            text-shadow: 0 0 5px #00ff00;
+        }
+
+        .file-input-container {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .file-input-container label {
+            background-color: #00ffff;
+            color: #1a1a1a;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s, box-shadow 0.3s;
+        }
+
+        .file-input-container label:hover {
+            background-color: #00cccc;
+            box-shadow: 0 0 15px #00ffff;
+        }
+
+        .file-input-container input[type="file"] {
+            display: none;
+        }
+
     </style>
 </head>
 <body>
-    <div id="container-img">
-        <!-- <img src="./zuckSurf.png" /> -->
+    <h1>Create your Dev Card</h1>
+    <div class="main-container">
+        <div id="left" >
+            <div id="container-img">
+                <img id="selected-image" src="" />
+            </div>
+            <canvas id="canvas" width="500" height="500"></canvas>
+        </div>
+        <div class="sliders-container">
+            <div class="file-input-container">
+                <label for="image-upload">Choose Image</label>
+                <input type="file" id="image-upload" accept="image/*">
+            </div>
+            <div class="slider-container">
+                <button class="arrow-btn" id="prev-btn-bg">&lt;</button>
+                <div class="slider-content" id="current-bg">Background</div>
+                <button class="arrow-btn" id="next-btn-bg">&gt;</button>
+            </div>
+            <div class="slider-container">
+                <button class="arrow-btn" id="prev-btn-border">&lt;</button>
+                <div class="slider-content" id="current-border">Border</div>
+                <button class="arrow-btn" id="next-btn-border">&gt;</button>
+            </div>
+            <div class="slider-container">
+                <button class="arrow-btn" id="prev-btn-txt">&lt;</button>
+                <div class="slider-content" id="current-txt">Text</div>
+                <button class="arrow-btn" id="next-btn-txt">&gt;</button>
+            </div>
+        </div>
     </div>
-    <canvas id="canvas" width="500" height="500"></canvas>
-    
-    <div class="slider-container">
-        <button class="arrow-btn" id="prev-btn-bg">&lt;</button>
-        <div class="slider-content" id="current-bg"></div>
-        <button class="arrow-btn" id="next-btn-bg">&gt;</button>
-    </div>
-
-    <div class="slider-container">
-        <button class="arrow-btn" id="prev-btn-border">&lt;</button>
-        <div class="slider-content" id="current-border"></div>
-        <button class="arrow-btn" id="next-btn-border">&gt;</button>
-    </div>
-
     <script src="main.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const imageUpload = document.getElementById('image-upload');
+            const selectedImage = document.getElementById('selected-image');
+
+            imageUpload.addEventListener('change', function(event) {
+                const file = event.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        selectedImage.src = e.target.result;
+                    }
+                    reader.readAsDataURL(file);
+                }
+            });
+        });
+    </script>
 </body>
 </html>
