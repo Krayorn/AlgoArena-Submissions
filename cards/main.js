@@ -1,6 +1,6 @@
 const background = ['Comic Blue', 'Comic Orange', 'Matrix', 'Matrix light', 'Space', 'Rocks'];
 const borders = ['Purple Cadre', 'Green Cadre', 'Purple no corner'];
-const txts = ['Back-end', 'Front-End', 'Dev-Ops', 'Product Manager', 'FullStack', 'Scrum Master'];
+const txts = ['Back-end', 'Front-End', 'Dev-Ops', 'Product Manager', 'FullStack', 'Scrum Master', 'x10 Engineer'];
 
 const prevBtnBg = document.getElementById('prev-btn-bg');
 const nextBtnBg = document.getElementById('next-btn-bg');
