@@ -1,0 +1,23 @@
+{
+    "manifest_version": 3,
+    "name": "Daily Update Reminder",
+    "version": "1.0",
+    "description": "Reminds you to provide a daily update at 6 PM.",
+    "permissions": ["alarms", "storage"],
+    "background": {
+      "service_worker": "background.js"
+    },
+    "action": {
+        "default_popup": "popup.html"
+    //   "default_icon": {
+    //     "48": "icon48.png",
+    //     "128": "icon128.png"
+    //   }
+    },
+    // "icons": {
+    //   "48": "icon48.png",
+    //   "128": "icon128.png"
+    // },
+    "options_page": "updates.html"
+  }
+  
