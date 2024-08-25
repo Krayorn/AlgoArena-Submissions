@@ -64,6 +64,14 @@
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
             transition: opacity 0.3s ease-in-out;
         }
+        #clear-updates {
+            margin-top: 15px;
+            background-color: #f44336;
+            color: white;
+        }
+        #clear-updates:hover {
+            background-color: #d32f2f;
+        }
     </style>
 </head>
 <body>
@@ -72,6 +80,7 @@
     <textarea id="update" placeholder="How was your day?"></textarea>
     <button id="save">Save Update</button>
     <a href="updates.html" target="_blank">View All Updates</a>
+    <button id="clear-updates">Clear All Updates</button>
 
     <script src="popup.js"></script>
 </body>
