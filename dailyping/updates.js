@@ -3,18 +3,23 @@ document.addEventListener('DOMContentLoaded', () => {
   chrome.storage.local.get({ dailyUpdates: [] }, (result) => {
     const updatesDiv = document.getElementById('updates');
     const contributionBoard = document.getElementById('contribution-board');
+    const streaksDiv = document.getElementById('streaks');
     const updates = result.dailyUpdates;
 
     // Calculate streaks
     const { currentStreak, bestStreak } = calculateStreaks(updates);
 
     // Display streaks
-    const streaksDiv = document.createElement('div');
     streaksDiv.innerHTML = `
-      <p>Current Streak: ${currentStreak} days</p>
-      <p>Best Streak: ${bestStreak} days</p>
+      <div class="streak current-streak">
+        <div class="streak-label">Current Streak</div>
+        <div class="streak-value">${currentStreak} <span class="fire-emoji">${getFireEmoji(currentStreak)}</span></div>
+      </div>
+      <div class="streak best-streak">
+        <div class="streak-label">Best Streak</div>
+        <div class="streak-value">${bestStreak}</div>
+      </div>
     `;
-    document.body.insertBefore(streaksDiv, contributionBoard);
 
     // Create contribution board
     createContributionBoard(updates, contributionBoard);
@@ -23,17 +28,26 @@ document.addEventListener('DOMContentLoaded', () => {
     if (updates.length === 0) {
       updatesDiv.innerHTML = '<p class="no-updates">No updates recorded yet. Start sharing your daily thoughts!</p>';
     } else {
+      // Sort updates in reverse chronological order
+      updates.sort((a, b) => b.timestamp - a.timestamp);
+
       updates.forEach((entry) => {
         const updateDiv = document.createElement('div');
         updateDiv.className = 'update';
+
+        const moodEmoji = document.createElement('span');
+        moodEmoji.className = 'update-mood';
+        moodEmoji.textContent = getMoodEmoji(entry.mood);
 
         const updateText = document.createElement('p');
         updateText.textContent = entry.update;
 
         const timestamp = document.createElement('p');
         timestamp.className = 'timestamp';
-        timestamp.textContent = entry.timestamp;
+        const date = new Date(entry.timestamp);
+        timestamp.textContent = date.toLocaleString();
 
+        updateDiv.appendChild(moodEmoji);
         updateDiv.appendChild(updateText);
         updateDiv.appendChild(timestamp);
         updatesDiv.appendChild(updateDiv);
@@ -42,20 +56,26 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 
+function getFireEmoji(streak) {
+  if (streak >= 30) return '🔥🔥🔥';
+  if (streak >= 14) return '🔥🔥';
+  if (streak >= 7) return '🔥';
+  return '';
+}
+
 function createContributionBoard(updates, container) {
   const today = new Date();
-  today.setHours(0, 0, 0, 0); // Set to start of day
+  today.setHours(0, 0, 0, 0);
   const startOfYear = new Date(today.getFullYear(), 0, 1);
-  startOfYear.setHours(0, 0, 0, 0); // Set to start of day
+  startOfYear.setHours(0, 0, 0, 0);
   const grid = document.createElement('div');
   grid.className = 'contribution-grid';
 
-  // Adjust start date to previous Sunday
   while (startOfYear.getDay() !== 0) {
     startOfYear.setDate(startOfYear.getDate() - 1);
   }
 
-  const totalWeeks = 53; // Fixed number of columns
+  const totalWeeks = 53;
 
   for (let w = 0; w < totalWeeks; w++) {
     const column = document.createElement('div');
@@ -67,18 +87,18 @@ function createContributionBoard(updates, container) {
       
       const currentDate = new Date(startOfYear);
       currentDate.setDate(startOfYear.getDate() + (w * 7) + d);
-      currentDate.setHours(0, 0, 0, 0); // Set to start of day
+      currentDate.setHours(0, 0, 0, 0);
       
-      if (currentDate <= today) {
-        const dateString = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(currentDate.getDate()).padStart(2, '0')}`;
+      if (currentDate > today) {
+        cell.classList.add('future-date');
+      } else {
         const updateForDay = updates.find(update => {
           const updateDate = new Date(update.timestamp);
-          const updateDateString = `${updateDate.getFullYear()}-${String(updateDate.getMonth() + 1).padStart(2, '0')}-${String(updateDate.getDate()).padStart(2, '0')}`;
-          return updateDateString === dateString;
+          return updateDate.setHours(0, 0, 0, 0) === currentDate.getTime();
         });
         
         if (updateForDay) {
-          cell.setAttribute('data-level', '1');
+          cell.classList.add(`mood-${updateForDay.mood}`);
           cell.title = `${currentDate.toDateString()}: ${updateForDay.update}`;
         } else {
           cell.title = currentDate.toDateString();
@@ -102,11 +122,11 @@ function calculateStreaks(updates) {
   let lastDate = null;
 
   const today = new Date();
-  today.setHours(0, 0, 0, 0); // Set to start of day for accurate comparison
+  today.setHours(0, 0, 0, 0);
 
   sortedUpdates.forEach((update, index) => {
     const currentDate = new Date(update.timestamp);
-    currentDate.setHours(0, 0, 0, 0); // Set to start of day for accurate comparison
+    currentDate.setHours(0, 0, 0, 0);
 
     if (lastDate) {
       const dayDifference = (currentDate - lastDate) / (1000 * 60 * 60 * 24);
@@ -138,4 +158,17 @@ function calculateStreaks(updates) {
   });
 
   return { currentStreak, bestStreak };
+}
+
+function getMoodEmoji(mood) {
+  switch (mood) {
+    case 'good':
+      return '😊';
+    case 'okay':
+      return '😐';
+    case 'bad':
+      return '😞';
+    default:
+      return '';
+  }
 }

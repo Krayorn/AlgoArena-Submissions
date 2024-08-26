@@ -72,15 +72,53 @@
         #clear-updates:hover {
             background-color: #d32f2f;
         }
+        #test-helper {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+        }
+        #test-helper h4 {
+            margin-bottom: 10px;
+        }
+        #test-date {
+            margin-bottom: 10px;
+            width: 100%;
+            padding: 5px;
+        }
+        .emoji-selector {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 10px;
+        }
+        .emoji-option {
+            font-size: 24px;
+            cursor: pointer;
+            opacity: 0.5;
+            transition: opacity 0.3s ease;
+        }
+        .emoji-option.selected {
+            opacity: 1;
+        }
     </style>
 </head>
 <body>
     <h3>Daily Update</h3>
     <div id="error"></div>
+    <div class="emoji-selector">
+        <span class="emoji-option" data-mood="good">😊</span>
+        <span class="emoji-option" data-mood="okay">😐</span>
+        <span class="emoji-option" data-mood="bad">😞</span>
+    </div>
     <textarea id="update" placeholder="How was your day?"></textarea>
     <button id="save">Save Update</button>
     <a href="updates.html" target="_blank">View All Updates</a>
     <button id="clear-updates">Clear All Updates</button>
+
+    <div id="test-helper">
+        <h4>Test Helper</h4>
+        <input type="date" id="test-date">
+        <button id="add-test-entry">Add Test Entry</button>
+    </div>
 
     <script src="popup.js"></script>
 </body>

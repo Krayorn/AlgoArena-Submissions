@@ -25,7 +25,7 @@
 
         #contribution-board {
             margin-bottom: 30px;
-            width: 100%;
+            width: 685px;
             overflow-x: auto;
             padding: 10px;
             background-color: #f0f4f8;
@@ -47,16 +47,29 @@
             background-color: #ebedf0;
         }
 
-        .contribution-cell[data-level="1"] {
-            background-color: #4a89dc;
+        .contribution-cell.mood-good {
+            background-color: #4a89dc; /* Blue for good mood */
+        }
+
+        .contribution-cell.mood-okay {
+            background-color: #f1c40f; /* Yellow for okay mood */
+        }
+
+        .contribution-cell.mood-bad {
+            background-color: #e74c3c; /* Red for bad mood */
         }
 
         .contribution-cell.empty {
             background-color: #ebedf0;
         }
 
+        .contribution-cell.future-date {
+            background-color: #d0d7de; /* Darker shade for future dates */
+        }
+
         @media (max-width: 768px) {
-            .contribution-grid {
+            .contribution-grid,
+            .contribution-column {
                 gap: 2px;
             }
 
@@ -96,6 +109,11 @@
             font-style: italic;
         }
 
+        .update-mood {
+            font-size: 24px;
+            margin-right: 10px;
+        }
+
         .no-updates {
             text-align: center;
             font-size: 1.2em;
@@ -110,25 +128,54 @@
         }
 
         .streaks {
-            text-align: center;
+            display: flex;
+            justify-content: space-between;
             margin-bottom: 20px;
             font-size: 1.2em;
             color: #2c3e50;
         }
-
-        .streaks p {
-            margin: 5px 0;
+        .streak {
+            width: 48%;
+            text-align: center;
+            padding: 15px;
+            border-radius: 10px;
+            background-color: #f0f4f8;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
-
+        .streak-label {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
         .streak-value {
+            font-size: 2em;
             font-weight: bold;
             color: #3498db;
+        }
+        .current-streak .streak-value {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .fire-emoji {
+            margin-left: 10px;
+            font-size: 0.8em;
+        }
+
+        @media (max-width: 768px) {
+            .streaks {
+                flex-direction: column;
+            }
+            .streak {
+                width: 100%;
+                margin-bottom: 10px;
+            }
         }
     </style>
 </head>
 
 <body>
     <h1>Your Daily Updates</h1>
+    <div id="streaks" class="streaks"></div>
     <div id="contribution-board"></div>
     <div id="updates"></div>
     <div id="error"></div>
