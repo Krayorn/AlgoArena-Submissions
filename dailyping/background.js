@@ -1,15 +1,8 @@
-// chrome.runtime.onInstalled.addListener(() => {
-//   // Create an alarm to trigger every day at 6 PM
-//   chrome.alarms.create('dailyReminder', {
-//     when: getNext6PM(),
-//     periodInMinutes: 1440  // 24 hours
-//   });
-// });
-
 chrome.runtime.onInstalled.addListener(() => {
     // Create an alarm to trigger a few seconds after installation for testing
     chrome.alarms.create('dailyReminder', {
-      when: Date.now() + 1 * 1000,  // 10 seconds from now
+        when: getNext6PM(),
+        //  when: Date.now() + 1 * 1000,  // 10 seconds from now
       periodInMinutes: 1440  // 24 hours (keep this unchanged for regular use)
     });
 
@@ -22,7 +15,6 @@ chrome.runtime.onInstalled.addListener(() => {
 });
 
 
-  
 chrome.alarms.onAlarm.addListener((alarm) => {
   if (alarm.name === 'dailyReminder') {
     chrome.action.openPopup();  // Open the pop-up window
