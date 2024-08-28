@@ -5,13 +5,6 @@ chrome.runtime.onInstalled.addListener(() => {
         //  when: Date.now() + 1 * 1000,  // 10 seconds from now
       periodInMinutes: 1440  // 24 hours (keep this unchanged for regular use)
     });
-
-      // Add a context menu item
-  chrome.contextMenus.create({
-    id: "viewUpdates",
-    title: "View Daily Updates",
-    contexts: ["action"]  // Show this option in the extension's icon context menu
-  });
 });
 
 

@@ -2,9 +2,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const saveButton = document.getElementById('save');
     const updateInput = document.getElementById('update');
     const errorDiv = document.getElementById('error');
-    const clearButton = document.getElementById('clear-updates');
-    const testDateInput = document.getElementById('test-date');
-    const addTestEntryButton = document.getElementById('add-test-entry');
     const emojiOptions = document.querySelectorAll('.emoji-option');
 
     let selectedMood = null;
@@ -29,7 +26,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 updates.push({ update, timestamp, mood });
 
                 chrome.storage.local.set({ dailyUpdates: updates }, () => {
-                    alert('Update saved!');
                     updateInput.value = '';
                     resetMoodSelection();
                 });
@@ -60,25 +56,6 @@ document.addEventListener('DOMContentLoaded', () => {
             saveUpdate(update, Date.now(), selectedMood);
         } else {
             showError('Please enter your update and select a mood.');
-        }
-    });
-
-    clearButton.addEventListener('click', () => {
-            chrome.storage.local.set({ dailyUpdates: [] }, () => {
-                alert('All updates have been cleared.');
-                updateInput.value = '';
-                resetMoodSelection();
-            });
-    });
-
-    addTestEntryButton.addEventListener('click', () => {
-        const testDate = testDateInput.value;
-        if (testDate && selectedMood) {
-            const testUpdate = `Test update for ${testDate}`;
-            const timestamp = new Date(testDate).getTime();
-            saveUpdate(testUpdate, timestamp, selectedMood);
-        } else {
-            showError('Please select a date and mood for the test entry.');
         }
     });
 });
