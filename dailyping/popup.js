@@ -28,6 +28,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 chrome.storage.local.set({ dailyUpdates: updates }, () => {
                     updateInput.value = '';
                     resetMoodSelection();
+                    hideError();
                 });
             } else {
                 showError('An update for this date already exists.');

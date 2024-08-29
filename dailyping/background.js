@@ -7,7 +7,6 @@ chrome.runtime.onInstalled.addListener(() => {
     });
 });
 
-
 chrome.alarms.onAlarm.addListener((alarm) => {
   if (alarm.name === 'dailyReminder') {
     chrome.action.openPopup();  // Open the pop-up window
