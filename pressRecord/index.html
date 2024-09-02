@@ -3,15 +3,67 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Voice Recorder</title>
+    <title>Simple Voice Recorder</title>
     <style>
-        body { font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; }
-        button { margin: 5px; }
-        #recordingsList { list-style-type: none; padding: 0; }
-        #recordingsList li { margin-bottom: 10px; }
-        #waveform { width: 100%; height: 100px; }
-        #editControls { display: none; margin-top: 10px; }
-        #timeRange { width: 100%; }
+        body {
+            background-color: #121212;
+            color: #ffffff;
+            font-family: Arial, sans-serif;
+            text-align: center;
+        }
+
+        h1, h2 {
+            color: #ffffff;
+        }
+
+        button {
+            background-color: #333333;
+            color: #ffffff;
+            border: none;
+            padding: 10px 20px;
+            margin: 10px;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #555555;
+        }
+
+        #recordingInfo, #waveformContainer1, #waveformContainer2 {
+            margin: 20px auto;
+            width: 80%;
+            max-width: 600px;
+        }
+
+        #loader {
+            border: 4px solid #f3f3f3;
+            border-radius: 50%;
+            border-top: 4px solid #3498db;
+            width: 20px;
+            height: 20px;
+            animation: spin 2s linear infinite;
+            margin: 0 auto;
+        }
+
+        #waveform1, #waveform2 {
+            background-color: #1e1e1e;
+            border-radius: 5px;
+        }
+
+        .wavesurfer-region {
+            background-color: rgba(255, 255, 0, 0.3) !important;
+        }
+
+        #frequency {
+            color: #3498db;
+        }
+
+        input[type="range"] {
+            width: 100%;
+        }
+
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
@@ -21,23 +73,34 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/wavesurfer.js/6.6.3/plugin/wavesurfer.regions.min.js"></script>
 </head>
 <body>
-    <h1>Voice Recorder</h1>
+    <h1>Simple Voice Recorder</h1>
     <button id="recordButton">Start Recording</button>
     <button id="resumeAudioContext" style="display: none;">Resume Audio</button>
     <p id="recordingStatus"></p>
     <div id="recordingInfo" style="display: none;">
         <p>Duration: <span id="duration">0:00</span></p>
-        <div id="loader" style="border: 4px solid #f3f3f3; border-radius: 50%; border-top: 4px solid #3498db; width: 20px; height: 20px; animation: spin 2s linear infinite;"></div>
+        <div id="loader"></div>
     </div>
-    <div id="waveformContainer" style="display: none;">
-        <div id="waveform"></div>
-        <div id="audioInfo">
-            <p>Duration: <span id="duration">0:00</span></p>
+    <div id="waveformContainer1" style="display: none;">
+        <div id="waveform1"></div>
+        <div id="audioInfo1">
+            <p>Duration: <span id="duration1">0:00</span></p>
         </div>
-        <div id="editControls" style="display: none;">
-            <input type="range" id="timeRange" min="0" max="100" value="0">
-            <button id="playPauseButton">Play/Pause</button>
-            <button id="cutButton">Cut</button>
+        <div id="editControls1" style="display: none;">
+            <input type="range" id="timeRange1" min="0" max="100" value="0">
+            <button id="playPauseButton1">Play/Pause</button>
+            <button id="cutButton1">Cut</button>
+        </div>
+    </div>
+    <div id="waveformContainer2" style="display: none;">
+        <div id="waveform2"></div>
+        <div id="audioInfo2">
+            <p>Duration: <span id="duration2">0:00</span></p>
+        </div>
+        <div id="editControls2" style="display: none;">
+            <input type="range" id="timeRange2" min="0" max="100" value="0">
+            <button id="playPauseButton2">Play/Pause</button>
+            <button id="replaceButton">Replace Selection from First Track</button>
         </div>
     </div>
     <h2>Recordings</h2>
@@ -51,17 +114,65 @@
         let durationInterval;
         let isRecording = false;
         let audioContext;
-        let wavesurfer;
-        let currentRecordingIndex;
+        let wavesurfer1, wavesurfer2;
+        let currentRecordingIndex1, currentRecordingIndex2;
 
         const recordButton = document.getElementById('recordButton');
         const resumeAudioContextButton = document.getElementById('resumeAudioContext');
         const recordingStatus = document.getElementById('recordingStatus');
         const recordingInfo = document.getElementById('recordingInfo');
         const durationElement = document.getElementById('duration');
-        const waveformContainer = document.getElementById('waveformContainer');
-        const audioInfo = document.getElementById('audioInfo');
-        const editControls = document.getElementById('editControls');
+        const waveformContainer1 = document.getElementById('waveformContainer1');
+        const audioInfo1 = document.getElementById('audioInfo1');
+        const editControls1 = document.getElementById('editControls1');
+        const timeRange1 = document.getElementById('timeRange1');
+        const playPauseButton1 = document.getElementById('playPauseButton1');
+        const cutButton1 = document.getElementById('cutButton1');
+        const waveformContainer2 = document.getElementById('waveformContainer2');
+        const audioInfo2 = document.getElementById('audioInfo2');
+        const editControls2 = document.getElementById('editControls2');
+        const timeRange2 = document.getElementById('timeRange2');
+        const playPauseButton2 = document.getElementById('playPauseButton2');
+        const replaceButton = document.getElementById('replaceButton');
+
+        function initWaveSurfer(container, timeRange, playPauseButton) {
+            const wavesurfer = WaveSurfer.create({
+                container: container,
+                waveColor: 'violet',
+                progressColor: 'purple',
+                plugins: [
+                    WaveSurfer.regions.create({})
+                ]
+            });
+
+            wavesurfer.on('ready', () => {
+                wavesurfer.on('audioprocess', () => {
+                    timeRange.value = (wavesurfer.getCurrentTime() / wavesurfer.getDuration()) * 100;
+                });
+
+                wavesurfer.addRegion({
+                    id: 'selection',
+                    start: 0,
+                    end: wavesurfer.getDuration(),
+                    color: 'rgba(0, 255, 0, 0.1)',
+                    drag: true,
+                    resize: true
+                });
+            });
+
+            playPauseButton.addEventListener('click', () => wavesurfer.playPause());
+
+            return wavesurfer;
+        }
+
+        function addEventListeners() {
+            recordButton.addEventListener('click', toggleRecording);
+            resumeAudioContextButton.addEventListener('click', resumeAudioContext);
+            timeRange1.addEventListener('input', () => updateWaveSurferTime(wavesurfer1, timeRange1));
+            timeRange2.addEventListener('input', () => updateWaveSurferTime(wavesurfer2, timeRange2));
+            cutButton1.addEventListener('click', () => cutSelectedAudio(currentRecordingIndex1, wavesurfer1));
+            replaceButton.addEventListener('click', replaceSelection);
+        }
 
         async function toggleRecording() {
             if (!audioContext) {
@@ -132,7 +243,8 @@
                 const li = document.createElement('li');
                 li.innerHTML = `
                     Recording ${index + 1}
-                    <button onclick="selectRecording(${index})">Select</button>
+                    <button onclick="selectRecording1(${index})">Select as Track 1</button>
+                    <button onclick="selectRecording2(${index})">Select as Track 2</button>
                     <button onclick="playRecording(${index})">Play</button>
                     <button onclick="exportRecording(${index})">Export</button>
                 `;
@@ -140,73 +252,46 @@
             });
         }
 
-        function selectRecording(index) {
-            currentRecordingIndex = index;
-            waveformContainer.style.display = 'block';
-            audioInfo.style.display = 'block';
-            editControls.style.display = 'block';
+        function selectRecording1(index) {
+            currentRecordingIndex1 = index;
+            waveformContainer1.style.display = 'block';
+            audioInfo1.style.display = 'block';
+            editControls1.style.display = 'block';
 
-            if (wavesurfer) {
-                wavesurfer.destroy();
+            if (wavesurfer1) {
+                wavesurfer1.destroy();
             }
 
-            wavesurfer = WaveSurfer.create({
-                container: '#waveform',
-                waveColor: 'violet',
-                progressColor: 'purple',
-                plugins: [
-                    WaveSurfer.regions.create({})
-                ]
-            });
-
-            wavesurfer.loadBlob(recordings[index]);
-
-            wavesurfer.on('ready', () => {
-                updateDurationFromWavesurfer();
-                wavesurfer.on('audioprocess', updateDurationFromWavesurfer);
-
-                // Add a single draggable region for selecting the portion to keep
-                wavesurfer.addRegion({
-                    id: 'selection',
-                    start: 0,
-                    end: wavesurfer.getDuration(),
-                    color: 'rgba(0, 255, 0, 0.1)',
-                    drag: true,
-                    resize: true
-                });
-            });
-
-            const timeRange = document.getElementById('timeRange');
-            timeRange.addEventListener('input', () => {
-                const time = wavesurfer.getDuration() * (timeRange.value / 100);
-                wavesurfer.setCurrentTime(time);
-            });
-
-            wavesurfer.on('audioprocess', () => {
-                timeRange.value = (wavesurfer.getCurrentTime() / wavesurfer.getDuration()) * 100;
-            });
-
-            const playPauseButton = document.getElementById('playPauseButton');
-            playPauseButton.addEventListener('click', () => {
-                wavesurfer.playPause();
-            });
-
-            const cutButton = document.getElementById('cutButton');
-            cutButton.addEventListener('click', () => {
-                const selectionRegion = wavesurfer.regions.list['selection'];
-                if (selectionRegion) {
-                    cutAudio(index, selectionRegion.start, selectionRegion.end);
-                } else {
-                    alert('Please select a valid region for cutting.');
-                }
-            });
+            wavesurfer1 = initWaveSurfer('#waveform1', timeRange1, playPauseButton1);
+            wavesurfer1.loadBlob(recordings[index]);
         }
 
-        function updateDurationFromWavesurfer() {
-            const duration = Math.floor(wavesurfer.getCurrentTime());
-            const minutes = Math.floor(duration / 60);
-            const seconds = duration % 60;
-            durationElement.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+        function selectRecording2(index) {
+            currentRecordingIndex2 = index;
+            waveformContainer2.style.display = 'block';
+            audioInfo2.style.display = 'block';
+            editControls2.style.display = 'block';
+
+            if (wavesurfer2) {
+                wavesurfer2.destroy();
+            }
+
+            wavesurfer2 = initWaveSurfer('#waveform2', timeRange2, playPauseButton2);
+            wavesurfer2.loadBlob(recordings[index]);
+        }
+
+        function updateWaveSurferTime(wavesurfer, timeRange) {
+            const time = wavesurfer.getDuration() * (timeRange.value / 100);
+            wavesurfer.setCurrentTime(time);
+        }
+
+        async function cutSelectedAudio(index, wavesurfer) {
+            const selectionRegion = wavesurfer.regions.list['selection'];
+            if (selectionRegion) {
+                await cutAudio(index, selectionRegion.start, selectionRegion.end);
+            } else {
+                alert('Please select a valid region for cutting.');
+            }
         }
 
         async function cutAudio(index, start, end) {
@@ -216,6 +301,7 @@
             // Ensure start and end are within valid range
             start = Math.max(0, start);
             end = Math.min(audioBuffer.duration, end);
+
             const newDuration = end - start;
             const offlineContext = new OfflineAudioContext(
                 audioBuffer.numberOfChannels,
@@ -229,18 +315,11 @@
                 audioBuffer.sampleRate
             );
 
-
             for (let channel = 0; channel < audioBuffer.numberOfChannels; channel++) {
                 const channelData = audioBuffer.getChannelData(channel);
                 const newChannelData = newBuffer.getChannelData(channel);
 
-                const startOffset = Math.floor(start * audioBuffer.sampleRate);
-                const endOffset = Math.floor(end * audioBuffer.sampleRate);
-
-                if (startOffset < 0 || endOffset > channelData.length) {
-                    throw new RangeError('offset is out of bounds');
-                }
-                newChannelData.set(channelData.subarray(startOffset, endOffset - 1));
+                newChannelData.set(channelData.subarray(Math.floor(start * audioBuffer.sampleRate), Math.floor(end * audioBuffer.sampleRate)-1));
             }
 
             const newBlob = await new Promise(resolve => {
@@ -255,7 +334,78 @@
             });
 
             recordings[index] = newBlob;
-            selectRecording(index);
+            selectRecording1(index);
+        }
+
+        async function replaceSelection() {
+            const selectionRegion1 = wavesurfer1.regions.list['selection'];
+            const selectionRegion2 = wavesurfer2.regions.list['selection'];
+
+            if (selectionRegion1 && selectionRegion2) {
+                await replaceAudio(currentRecordingIndex1, selectionRegion1.start, selectionRegion1.end, currentRecordingIndex2, selectionRegion2.start, selectionRegion2.end);
+            } else {
+                alert('Please select valid regions in both tracks.');
+            }
+        }
+
+        async function replaceAudio(index1, start1, end1, index2, start2, end2) {
+            const audioContext = new AudioContext();
+            const audioBuffer1 = await audioContext.decodeAudioData(await recordings[index1].arrayBuffer());
+            const audioBuffer2 = await audioContext.decodeAudioData(await recordings[index2].arrayBuffer());
+
+            // Ensure start and end are within valid range
+            start1 = Math.max(0, start1);
+            end1 = Math.min(audioBuffer1.duration, end1);
+            start2 = Math.max(0, start2);
+            end2 = Math.min(audioBuffer2.duration, end2);
+
+            const newDuration = audioBuffer1.duration - (end1 - start1) + (end2 - start2);
+            const offlineContext = new OfflineAudioContext(
+                audioBuffer1.numberOfChannels,
+                Math.floor(newDuration * audioBuffer1.sampleRate),
+                audioBuffer1.sampleRate
+            );
+
+            const newBuffer = offlineContext.createBuffer(
+                audioBuffer1.numberOfChannels,
+                Math.floor(newDuration * audioBuffer1.sampleRate),
+                audioBuffer1.sampleRate
+            );
+
+            for (let channel = 0; channel < audioBuffer1.numberOfChannels; channel++) {
+                const channelData1 = audioBuffer1.getChannelData(channel);
+                const channelData2 = audioBuffer2.getChannelData(channel);
+                const newChannelData = newBuffer.getChannelData(channel);
+
+                // Copy the part before the replacement
+                newChannelData.set(channelData1.subarray(0, Math.floor(start1 * audioBuffer1.sampleRate)-1));
+
+                // Copy the replacement part
+                newChannelData.set(
+                    channelData2.subarray(Math.floor(start2 * audioBuffer2.sampleRate), Math.floor(end2 * audioBuffer2.sampleRate)-1),
+                    Math.floor(start1 * audioBuffer1.sampleRate)
+                );
+
+                // Copy the part after the replacement
+                newChannelData.set(
+                    channelData1.subarray(Math.floor(end1 * audioBuffer1.sampleRate)),
+                    Math.floor((start1 + (end2 - start2)) * audioBuffer1.sampleRate)
+                );
+            }
+
+            const newBlob = await new Promise(resolve => {
+                const source = offlineContext.createBufferSource();
+                source.buffer = newBuffer;
+                source.connect(offlineContext.destination);
+                source.start();
+
+                offlineContext.startRendering().then(renderedBuffer => {
+                    resolve(bufferToWave(renderedBuffer, renderedBuffer.length));
+                });
+            });
+
+            recordings[index1] = newBlob;
+            selectRecording1(index1);
         }
 
         function bufferToWave(abuffer, len) {
@@ -326,16 +476,13 @@
             URL.revokeObjectURL(url);
         }
 
-        recordButton.addEventListener('click', toggleRecording);
-
-        resumeAudioContextButton.addEventListener('click', async () => {
+        async function resumeAudioContext() {
             if (audioContext && audioContext.state === 'suspended') {
                 await audioContext.resume();
                 resumeAudioContextButton.style.display = 'none';
             }
-        });
+        }
 
-        // Check AudioContext state and show resume button if needed
         function checkAudioContextState() {
             if (audioContext && audioContext.state === 'suspended') {
                 resumeAudioContextButton.style.display = 'inline-block';
@@ -344,7 +491,8 @@
             }
         }
 
-        // Call this function periodically or after user interactions
+        // Initialize
+        addEventListeners();
         setInterval(checkAudioContextState, 1000);
     </script>
 </body>
