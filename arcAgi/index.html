@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arc AGI</title>
+    <style>
+                /* New styles for the grid */
+                .grid {
+            display: flex;
+            flex-direction: column;
+            margin-top: 20px;
+        }
+        .row {
+            display: flex;
+        }
+        .cell {
+            width: 30px; /* Adjust cell size */
+            height: 30px; /* Adjust cell size */
+            border: 1px solid #ccc;
+        }
+        .cell-0 { background-color: black; }
+        .cell-1 { background-color: blue; }
+        .cell-2 { background-color: red; }
+        .cell-3 { background-color: green; }
+        .cell-4 { background-color: yellow; }
+        
+        /* New styles for puzzle display */
+        .puzzle-example {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .puzzle-title {
+            margin-right: 10px;
+            font-weight: bold;
+        }
+        .puzzle-grid {
+            display: flex;
+            margin-right: 20px;
+            flex-direction: column;
+        }
+
+        #test_container {
+            display: flex;
+        }
+
+        #gridInput {
+            margin-right: 20px;
+        }
+
+    </style>
+</head>
+<body>
+    <button id="startSolve1">Start Solve1</button>
+    <a href="https://arcprize.org/play?task=3428a4f5" >See the puzzle 1 on ARC AGI</a>
+    
+    <button id="startSolve2">Start Solve2</button>
+    <a href="https://arcprize.org/play?task=28e73c20" >See the puzzle 2 on ARC AGI</a>
+    
+    <button id="startSolve3">Start Solve3</button>
+    <a href="https://arcprize.org/play?task=3906de3d" >See the puzzle 3 on ARC AGI</a>
+
+    <h2>Test input with animation:</h2>
+    <div id="test_container">
+        <div id="gridInput" class="grid"></div>
+        <div id="grid" class="grid"></div>
+    </div>
+    
+    <h2>Examples:</h2>
+    <div id="puzzle" class="grid"></div>
+
+    <script src="script.js"></script>
+</body>
+</html>
