@@ -1,0 +1,95 @@
+body {
+    --bg: #333333;
+    --white: white;
+
+    background-color: var(--bg);
+    font-size: 30px;
+}
+
+.bar, .scene, .scene div, .scene div::before, .scene div::after {
+    position: absolute;
+    content: '';
+    transform-style: preserve-3d;
+}
+
+.scene {
+    width: 300px; height: 300px;
+    background-color: black;
+    top: 50%;
+    left: 50%;
+    transform: rotateX(65deg) rotateZ(45deg);
+}
+
+.cube {
+    width: var(--x); height: var(--y);
+    
+    background-color: color-mix(in display-p3, var(--color) 50%, var(--bg));
+
+    translate: -50% -50%;
+}
+
+.cube::before {
+    width: var(--x); height: var(--z);
+    background-color: color-mix(in display-p3, var(--color) 70%, var(--bg));
+
+    transform-origin: top center;
+    rotate: x 90deg;
+}
+
+.cube::after {
+    width: var(--x); height: var(--z);
+    background-color: color-mix(in display-p3, var(--color) 90%, var(--bg));
+
+    translate: 0 var(--y);
+    transform-origin: top center;
+    rotate: x 90deg;
+}
+
+.cube div {
+    width: var(--x); height: var(--y);
+
+    background-color: color-mix(in display-p3, var(--color) 100%, var(--bg));
+    
+    translate: 0 0 var(--z);
+}
+
+.cube div::before {
+    width: var(--z); height: var(--y);
+    
+    background-color: color-mix(in display-p3, var(--color) 80%, var(--bg));
+    
+    transform-origin: left center;
+    rotate: y 90deg;
+}
+
+.cube div::after {
+    width: var(--z); height: var(--y);
+    
+    background-color: color-mix(in display-p3, var(--color) 80%, var(--bg));
+    
+    transform-origin: left center;
+    rotate: y 90deg;
+    translate: var(--x);
+}
+
+.demo {
+    --x: 1em; --y: 1em; --z: 1em;
+}
+
+.red {
+    --color: red;
+    translate: 1em 0em 0em;
+}
+.blue {
+    --color: blue;
+    translate: 2em -1em 0em;
+}
+.yellow {
+    --color: yellow;
+    translate: 3em -2em 0em;
+}
+
+.camera-controls {    
+    position: absolute;
+    bottom: 0;
+}
