@@ -1,32 +1,38 @@
-// Get the necessary elements
 const bar = document.querySelector('.bar');
 const scene = document.querySelector('.scene');
 let selectedCube = null;
 let activeCube = null;
 
+
 // Add click event listeners to the cubes in the bar
 bar.querySelectorAll('.demo.cube').forEach(cube => {
     cube.addEventListener('click', () => {
+        bar.querySelectorAll('.demo.cube').forEach(c => c.classList.remove('selected'));
+        
+        cube.classList.add('selected');
         selectedCube = cube.cloneNode(true);
-        selectedCube.classList.remove('demo');
+        selectedCube.classList.remove('demo', 'selected');
         selectedCube.style.setProperty('--x', '1em');
         selectedCube.style.setProperty('--y', '1em');
         selectedCube.style.setProperty('--z', '1em');
     });
 });
 
-// Add click event listener to the scene for placing or selecting cubes
 scene.addEventListener('click', (e) => {
     const clickedCube = e.target.closest('.cube');
     if (clickedCube && clickedCube.parentElement === scene) {
         // If clicked on an existing cube, select it
         setActiveCube(clickedCube);
     } else if (selectedCube) {
-        // If clicked on empty space and a cube is selected from the bar, place new cube
         const newCube = selectedCube.cloneNode(true);
-        newCube.style.translate = '0em 0em 0em';
-        newCube.dataset.x = '0';
-        newCube.dataset.y = '0';
+        
+        const rect = scene.getBoundingClientRect();
+        const x = (e.clientX - rect.left) / 30; 
+        const y = (e.clientY - rect.top) / 30;
+        
+        newCube.style.translate = `${x}em ${y}em 0em`;
+        newCube.dataset.x = x;
+        newCube.dataset.y = y;
         newCube.dataset.z = '0';
         
         scene.appendChild(newCube);
@@ -42,7 +48,18 @@ function setActiveCube(cube) {
     activeCube.style.outline = '2px solid white';
 }
 
-// Add keydown event listener for arrow key controls and delete
+// Add deselect functionality
+const deselectAllButton = document.getElementById('deselectAll');
+deselectAllButton.addEventListener('click', () => {
+    bar.querySelectorAll('.demo.cube').forEach(c => c.classList.remove('selected'));
+    selectedCube = null;
+    
+    if (activeCube) {
+        activeCube.style.outline = 'none';
+        activeCube = null;
+    }
+});
+
 document.addEventListener('keydown', (e) => {
     if (!activeCube) return;
 
@@ -84,23 +101,17 @@ document.addEventListener('keydown', (e) => {
     activeCube.style.translate = `${x}em ${y}em ${z}em`;
 });
 
-// Existing code...
-
-// Add these variables at the top of your script
 let cameraRotateX = 65;
 let cameraRotateZ = 45;
 
-// Add this function to update the camera angle
 function updateCameraAngle() {
   scene.style.transform = `rotateX(${cameraRotateX}deg) rotateZ(${cameraRotateZ}deg)`;
 }
 
 document.querySelectorAll('.camera-controls .arrow').forEach(arrow => {
-  console.log(arrow)
     arrow.addEventListener('click', (e) => {
-    const direction = e.target.classList[1]; // up, down, left, or right
-    const step = 5; // Rotation step in degrees
-    console.log('direction', direction)
+    const direction = e.target.classList[1];
+    const step = 5;
     switch (direction) {
       case 'up':
         cameraRotateX = Math.max(0, cameraRotateX - step);

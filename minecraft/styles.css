@@ -13,10 +13,10 @@ body {
 }
 
 .scene {
-    width: 300px; height: 300px;
+    width: 60%; height: 60%;
     background-color: black;
-    top: 50%;
-    left: 50%;
+    top: 20%;
+    left: 20%;
     transform: rotateX(65deg) rotateZ(45deg);
 }
 
@@ -76,20 +76,114 @@ body {
     --x: 1em; --y: 1em; --z: 1em;
 }
 
-.red {
-    --color: red;
-    translate: 1em 0em 0em;
-}
-.blue {
-    --color: blue;
-    translate: 2em -1em 0em;
-}
-.yellow {
-    --color: yellow;
-    translate: 3em -2em 0em;
+.stone {
+    --color: #7F7F7F;
 }
 
-.camera-controls {    
+.dirt {
+    --color: #8B4513;
+}
+
+.grass {
+    --color: #567D46;
+}
+
+.wood {
+    --color: #8B4513;
+}
+
+.leaves {
+    --color: #2ECC71;
+}
+
+.sand {
+    --color: #F4A460;
+}
+
+.water {
+    --color: #3498DB;
+}
+
+.brick {
+    --color: #CD5C5C;
+}
+
+.gold {
+    --color: #FFD700;
+}
+
+.glass {
+    --color: #FFFFFF;
+}
+
+.bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 10px;
+    background-color: rgba(0, 0, 0, 0.5);
+    border-radius: 10px;
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding-top: 40px;
+    padding-left: 40px;
+}
+
+.bar .demo.cube {
+    position: relative;
+    width: 2em;
+    height: 2em;
+    transform: scale(0.5) rotateX(45deg) rotateZ(45deg);
+    cursor: pointer;
+    transition: transform 0.3s;
+}
+
+.bar .demo.cube:hover {
+    transform: scale(0.6) rotateX(45deg) rotateZ(45deg);
+}
+
+.bar .demo.cube.selected {
+    transform: scale(0.7) rotateX(45deg) rotateZ(45deg);
+    outline: 2px solid white;
+    z-index: 1;
+}
+
+.cross-icon {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    width: 30px;
+    height: 30px;
+    cursor: pointer;
+    background: rgba(255, 255, 255, 0.2);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 50%;
+}
+
+.cross-icon::before,
+.cross-icon::after {
+    content: '';
     position: absolute;
-    bottom: 0;
+    width: 20px;
+    height: 2px;
+    background-color: white;
+}
+
+.cross-icon::before {
+    transform: rotate(45deg);
+}
+
+.cross-icon::after {
+    transform: rotate(-45deg);
+}
+
+.camera-controls {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
 }
