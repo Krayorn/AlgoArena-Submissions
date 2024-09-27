@@ -5,25 +5,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Baseball Reflex Game</title>
     <style>
-        main {
-            display: flex;
-            flex-direction: column;
-        }
-
         canvas {
             border: 1px solid black;
-            width: 800px;
-            height: 400px;
+            background-color: #4CAF50; /* Green field color */
         }
     </style>
 </head>
 <body>
-    <main>
-        <span id="level">XXX</span>
-        <canvas id="gameCanvas" width="800" height="400"></canvas>
-        <p>Click the ball as soon as it crosses the blue line!</p>
-        <p>Reaction time: <span id="reactionTime">-</span> ms</p>
-    </main>
+    <canvas id="gameCanvas" width="800" height="400"></canvas>
+    <p>Click the ball as soon as it crosses the blue line!</p>
+    <p>Reaction time: <span id="reactionTime">-</span></p>
+    <span id="level">Level 1</span>
+    <span id="score">Score: X</span>
+    
+    <div id="announcement"></div>
     <script src="main.js" ></script>
 </body>
 </html>
