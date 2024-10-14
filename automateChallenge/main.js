@@ -38,19 +38,34 @@ async function getIssues(owner, repo) {
 }
 
 async function extractVideoFromIssue(issue) {
-  const videoRegex = /https:\/\/github\.com\/user-attachments\/assets\/[a-f0-9-]+/;
-  const match = issue.body.match(videoRegex);
-  return match ? match[0] : null;
-}
+    const githubVideoRegex = /https:\/\/github\.com\/(?:user-attachments\/assets\/[a-f0-9-]+|[^/]+\/[^/]+\/assets\/\d+\/[a-f0-9-]+)/;
+    const youtubeRegex = /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com|youtu\.be)\/(?:watch\?v=)?(?:embed\/)?(?:v\/)?(?:shorts\/)?([a-zA-Z0-9_-]{11})/;
+  
+    const githubMatch = issue.body.match(githubVideoRegex);
+    const youtubeMatch = issue.body.match(youtubeRegex);
+  
+    if (youtubeMatch) {
+      return { type: 'youtube', url: youtubeMatch[0], id: youtubeMatch[1] };
+    } else if (githubMatch) {
+      return { type: 'github', url: githubMatch[0] };
+    } else {
+      return null;
+    }
+  }
 
 async function downloadVideo(url) {
-  const response = await axios.get(url, { 
-    responseType: 'arraybuffer',
-    headers: {
-      'Authorization': `token ${process.env.GITHUB_TOKEN}`
-    }
-  });
-  return Buffer.from(response.data, 'binary');
+    try {
+        const response = await axios.get(url, { 
+        responseType: 'arraybuffer',
+        headers: {
+        'Authorization': `token ${process.env.GITHUB_TOKEN}`
+        }
+    });
+    return Buffer.from(response.data, 'binary');
+    } catch (error) {
+    console.error('Error downloading video:', error);
+    throw error;
+  }
 }
 
 async function promptUser(question) {
@@ -62,7 +77,6 @@ async function promptUser(question) {
 }
 
 async function createTwitterThread(issues) {
-  let lastTweetId = null;
   const placedIssues = {
     first: null,
     second: null,
@@ -75,7 +89,7 @@ async function createTwitterThread(issues) {
     
     const placement = await promptUser("Enter placement (1, 2, 3, or h for honorable mention): ");
     const useOriginalHandle = await promptUser(`Use original GitHub handle @${issue.user.login}? (y/n): `);
-    if (useOriginalHandle.toLowerCase() === 'y') {
+    if (useOriginalHandle.toLowerCase() === 'y' || useOriginalHandle.toLowerCase() === '') {
       issue.author = `@${issue.user.login}`;
     } else {
       issue.author = await promptUser("Enter the Twitter handle to use (with the @ if needed): ");
@@ -98,7 +112,6 @@ async function createTwitterThread(issues) {
         break;
       case 'h':
         placedIssues.honorableMentions.push(issue);
-        
         break;
       default:
         console.log("Invalid placement. Skipping this issue.");
@@ -113,19 +126,38 @@ async function createTwitterThread(issues) {
     ...placedIssues.honorableMentions
   ].filter(Boolean);
 
+    // Prompt for introduction text
+    const introText = await promptUser("Enter introduction text for the first tweet: ");
+
+    // Post introduction tweet
+    console.log('Posting introduction tweet...');
+    let lastTweetId = null
+    try {
+        const introTweet = await client.v2.tweet({ text: introText });
+        lastTweetId = introTweet.data.id;
+    } catch (error) {
+    console.error('Error posting intro tweet:', error);
+    throw error;
+  }
+    console.log(`Introduction tweet posted: ${introText}`);
+
   for (const issue of orderedIssues) {
-    const videoUrl = await extractVideoFromIssue(issue);
-    if (!videoUrl) {
+    const videoInfo = await extractVideoFromIssue(issue);
+    if (!videoInfo) {
       console.log(`No video found for issue: ${issue.title}`);
       continue;
     }
+    console.log("videoInfo", videoInfo)
+    let mediaId = null;
+    if (videoInfo.type === 'github') {
+      console.log(`Downloading video from: ${videoInfo.url}`);
+      const video = await downloadVideo(videoInfo.url);
+      console.log('Uploading video to Twitter...');
+      mediaId = await client.v1.uploadMedia(video, { mimeType: 'video/mp4' });
+        console.log('uploaded', mediaId)
+    }
 
-    console.log(`Downloading video from: ${videoUrl}`);
-    //const video = await downloadVideo(videoUrl);
     const note = await promptUser(`Enter a note for issue "${issue.title}": `);
-
-    console.log('Uploading video to Twitter...');
-    //const mediaId = await client.v1.uploadMedia(video, { mimeType: 'application/octet-stream' });
 
     let tweetText = ''
     if (issue.opening) {
@@ -135,20 +167,33 @@ async function createTwitterThread(issues) {
     }
     tweetText += `${issue.author}! ${note}`
     
+    if (videoInfo.type === 'youtube') {
+        tweetText += `\n\nWatch the submission: https://youtu.be/${videoInfo.id}`;
+    }
+    
     const tweetOptions = {
-      text: tweetText,
-      //media: { media_ids: [mediaId] },
+        text: tweetText,
     };
 
+    if (videoInfo.type === 'github') {
+        tweetOptions.media= { media_ids: [mediaId] }
+    }
+
+    console.log('lasttweetid', lastTweetId)
     if (lastTweetId) {
       tweetOptions.reply = { in_reply_to_tweet_id: lastTweetId };
     }
 
     console.log('Posting tweet...', tweetText);
-    //const tweet = await client.v2.tweet(tweetOptions);
-    //lastTweetId = tweet.data.id;
+    try {
+        const tweet = await client.v2.tweet(tweetOptions);
+    } catch (error) {
+    console.error('Error posting tweet:', error);
+    throw error;
+  }
+    lastTweetId = tweet.data.id;
 
-    //console.log(`Tweet posted: ${tweet.data.id}`);
+    console.log(`Tweet posted: ${tweet.data.id}`);
   }
 }
 
