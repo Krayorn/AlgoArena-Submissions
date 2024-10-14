@@ -80,7 +80,6 @@ async function waitForVideoProcessing(mediaId) {
     let processingInfo;
     do {
       const result = await client.v1.mediaInfo(mediaId);
-      console.log("result", result)
       processingInfo = result.processing_info;
       if (processingInfo.state === 'succeeded') {
         return;
@@ -88,10 +87,8 @@ async function waitForVideoProcessing(mediaId) {
       if (processingInfo.state === 'failed') {
         throw new Error('Video processing failed');
       }
-      console.log("processInfo", processingInfo);
       await new Promise(resolve => setTimeout(resolve, processingInfo.check_after_secs * 1000));
     } while (processingInfo.state === 'pending' || processingInfo.state === 'in_progress');
-    console.log("out")
 }
 
 async function createTwitterThread(issues) {
@@ -175,7 +172,6 @@ async function createTwitterThread(issues) {
       console.log(`No video found for issue: ${issue.title}`);
       continue;
     }
-    console.log("videoInfo", videoInfo)
     let mediaId = null;
     if (videoInfo.type === 'github') {
       console.log(`Downloading video from: ${videoInfo.url}`);
@@ -183,7 +179,7 @@ async function createTwitterThread(issues) {
       console.log('Uploading video to Twitter...');
       const res = await client.v1.uploadMedia(video, { longVideo: true, mimeType: EUploadMimeType.Mp4 }, true); // tried to add additionalOwners: ["myID"] as I've seen mentionned online but didn't work
       await waitForVideoProcessing(res.media_id_string);  
-      console.log('uploaded', res)
+      console.log('uploaded Video')
       mediaId = res.media_id_string
     }
 
@@ -219,7 +215,7 @@ async function createTwitterThread(issues) {
         lastTweetId = tweet.data.id;
         console.log(`Tweet posted: ${tweet.data.id}`);
     } catch (error) {
-      console.error('Error posting tweet, retrying without media', error, JSON.stringify(error.errors));
+      console.error('Error posting tweet, retrying without media');
 
       
       tweetText += `\n\nWatch the submission: ${videoInfo.url}`;
@@ -231,7 +227,6 @@ async function createTwitterThread(issues) {
         tweetOptions.reply = { in_reply_to_tweet_id: lastTweetId };
       }
 
-      console.log('Posting tweet again', tweetOptions);
       try {
         const tweet = await client.v2.tweet(tweetOptions);
         lastTweetId = tweet.data.id;
