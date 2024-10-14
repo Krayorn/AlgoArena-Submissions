@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { Octokit } from '@octokit/rest';
 import readline from 'readline';
-import { TwitterApi } from 'twitter-api-v2';
+import { EUploadMimeType, TwitterApi } from 'twitter-api-v2';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -76,6 +76,24 @@ async function promptUser(question) {
   });
 }
 
+async function waitForVideoProcessing(mediaId) {
+    let processingInfo;
+    do {
+      const result = await client.v1.mediaInfo(mediaId);
+      console.log("result", result)
+      processingInfo = result.processing_info;
+      if (processingInfo.state === 'succeeded') {
+        return;
+      }
+      if (processingInfo.state === 'failed') {
+        throw new Error('Video processing failed');
+      }
+      console.log("processInfo", processingInfo);
+      await new Promise(resolve => setTimeout(resolve, processingInfo.check_after_secs * 1000));
+    } while (processingInfo.state === 'pending' || processingInfo.state === 'in_progress');
+    console.log("out")
+}
+
 async function createTwitterThread(issues) {
   const placedIssues = {
     first: null,
@@ -88,12 +106,6 @@ async function createTwitterThread(issues) {
     console.log(`\nIssue: ${issue.title}`);
     
     const placement = await promptUser("Enter placement (1, 2, 3, or h for honorable mention): ");
-    const useOriginalHandle = await promptUser(`Use original GitHub handle @${issue.user.login}? (y/n): `);
-    if (useOriginalHandle.toLowerCase() === 'y' || useOriginalHandle.toLowerCase() === '') {
-      issue.author = `@${issue.user.login}`;
-    } else {
-      issue.author = await promptUser("Enter the Twitter handle to use (with the @ if needed): ");
-    }
     switch (placement) {
       case '1':
         placedIssues.first = issue;
@@ -117,6 +129,18 @@ async function createTwitterThread(issues) {
         console.log("Invalid placement. Skipping this issue.");
         continue;
     }
+
+    const twitterUsername = await getTwitterHandleFromGitHub(issue.user.login)
+    if (twitterUsername) {
+      issue.author = twitterUsername
+    } else {
+      const useOriginalHandle = await promptUser(`Use original GitHub handle @${issue.user.login}? (Y/n): `);
+      if (useOriginalHandle.toLowerCase() === 'y' || useOriginalHandle.toLowerCase() === '') {
+        issue.author = `@${issue.user.login}`;
+      } else {
+        issue.author = await promptUser("Enter the Twitter handle to use (with the @ if needed): ");
+      }
+    }
   }
 
   const orderedIssues = [
@@ -128,18 +152,22 @@ async function createTwitterThread(issues) {
 
     // Prompt for introduction text
     const introText = await promptUser("Enter introduction text for the first tweet: ");
+    const quoteUrl = await promptUser("Enter the URL of the tweet to quote (press Enter to skip): ");
 
     // Post introduction tweet
     console.log('Posting introduction tweet...');
     let lastTweetId = null
     try {
-        const introTweet = await client.v2.tweet({ text: introText });
-        lastTweetId = introTweet.data.id;
+      let introTweetOptions = { text: introText };
+      if (quoteUrl && quoteUrl.trim() !== '') {
+        introTweetOptions.quote_tweet_id = quoteUrl.split('/').pop();
+      }
+      const introTweet = await client.v2.tweet(introTweetOptions);
+      lastTweetId = introTweet.data.id;
     } catch (error) {
     console.error('Error posting intro tweet:', error);
     throw error;
   }
-    console.log(`Introduction tweet posted: ${introText}`);
 
   for (const issue of orderedIssues) {
     const videoInfo = await extractVideoFromIssue(issue);
@@ -153,8 +181,10 @@ async function createTwitterThread(issues) {
       console.log(`Downloading video from: ${videoInfo.url}`);
       const video = await downloadVideo(videoInfo.url);
       console.log('Uploading video to Twitter...');
-      mediaId = await client.v1.uploadMedia(video, { mimeType: 'video/mp4' });
-        console.log('uploaded', mediaId)
+      const res = await client.v1.uploadMedia(video, { longVideo: true, mimeType: EUploadMimeType.Mp4 }, true); // tried to add additionalOwners: ["myID"] as I've seen mentionned online but didn't work
+      await waitForVideoProcessing(res.media_id_string);  
+      console.log('uploaded', res)
+      mediaId = res.media_id_string
     }
 
     const note = await promptUser(`Enter a note for issue "${issue.title}": `);
@@ -179,21 +209,38 @@ async function createTwitterThread(issues) {
         tweetOptions.media= { media_ids: [mediaId] }
     }
 
-    console.log('lasttweetid', lastTweetId)
     if (lastTweetId) {
       tweetOptions.reply = { in_reply_to_tweet_id: lastTweetId };
     }
 
-    console.log('Posting tweet...', tweetText);
+    console.log('Posting tweet...', tweetOptions);
     try {
         const tweet = await client.v2.tweet(tweetOptions);
+        lastTweetId = tweet.data.id;
+        console.log(`Tweet posted: ${tweet.data.id}`);
     } catch (error) {
-    console.error('Error posting tweet:', error);
-    throw error;
-  }
-    lastTweetId = tweet.data.id;
+      console.error('Error posting tweet, retrying without media', error, JSON.stringify(error.errors));
 
-    console.log(`Tweet posted: ${tweet.data.id}`);
+      
+      tweetText += `\n\nWatch the submission: ${videoInfo.url}`;
+      const tweetOptions = {
+        text: tweetText,
+      };
+
+      if (lastTweetId) {
+        tweetOptions.reply = { in_reply_to_tweet_id: lastTweetId };
+      }
+
+      console.log('Posting tweet again', tweetOptions);
+      try {
+        const tweet = await client.v2.tweet(tweetOptions);
+        lastTweetId = tweet.data.id;
+        console.log(`Tweet posted: ${tweet.data.id}`);
+      } catch (error) {
+        console.log('Crashed for good, skipping this issue')
+        continue
+      }      
+  }
   }
 }
 
@@ -217,3 +264,36 @@ async function main() {
 }
 
 main();
+
+async function getTwitterHandleFromGitHub(username) {
+  try {
+    const { data: user } = await octokit.users.getByUsername({ username });
+    if (user.twitter_username) {
+      return `@${user.twitter_username}`;
+    }
+    return null;
+  } catch (error) {
+    console.error('Error fetching GitHub user info:', error);
+    return null;
+  }
+}
+
+async function postVideo() {
+  console.log('Downloading video...');
+  const video = await downloadVideo("https://github.com/user-attachments/assets/941c23c7-4524-416c-8109-ab7346a187d4");
+  //https://github.com/user-attachments/assets/c9ccbd5a-aab7-470d-81bd-040f79eb4ee7
+  console.log('Uploading video to Twitter...');
+  const res = await client.v1.uploadMedia(video, { longVideo: true, mimeType: EUploadMimeType.Mp4 }, true); // tried to add additionalOwners: ["myID"] as I've seen mentionned online but didn't work
+  await waitForVideoProcessing(res.media_id_string);  
+  
+  const tweetOptions = {
+    text: "Posting with a video working",
+    media: { media_ids: [res.media_id_string] }
+  };
+
+  try {
+    const tweet = await client.v2.tweet(tweetOptions);
+  } catch (error) {
+    console.log("ERROR WHILE POSTING VID", JSON.stringify(error))
+  }
+}
