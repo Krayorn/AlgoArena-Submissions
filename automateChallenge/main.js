@@ -1,15 +1,11 @@
 import axios from 'axios';
 import { Octokit } from '@octokit/rest';
-import readline from 'readline';
 import { EUploadMimeType, TwitterApi } from 'twitter-api-v2';
 import dotenv from 'dotenv';
+import chalk from 'chalk';
+import inquirer from 'inquirer';
 
 dotenv.config();
-
-const rl = readline.createInterface({
-  input: process.stdin,
-  output: process.stdout
-});
 
 const octokit = new Octokit({
   auth: process.env.GITHUB_TOKEN
@@ -38,57 +34,49 @@ async function getIssues(owner, repo) {
 }
 
 async function extractVideoFromIssue(issue) {
-    const githubVideoRegex = /https:\/\/github\.com\/(?:user-attachments\/assets\/[a-f0-9-]+|[^/]+\/[^/]+\/assets\/\d+\/[a-f0-9-]+)/;
-    const youtubeRegex = /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com|youtu\.be)\/(?:watch\?v=)?(?:embed\/)?(?:v\/)?(?:shorts\/)?([a-zA-Z0-9_-]{11})/;
-  
-    const githubMatch = issue.body.match(githubVideoRegex);
-    const youtubeMatch = issue.body.match(youtubeRegex);
-  
-    if (youtubeMatch) {
-      return { type: 'youtube', url: youtubeMatch[0], id: youtubeMatch[1] };
-    } else if (githubMatch) {
-      return { type: 'github', url: githubMatch[0] };
-    } else {
-      return null;
-    }
+  const githubVideoRegex = /https:\/\/github\.com\/(?:user-attachments\/assets\/[a-f0-9-]+|[^/]+\/[^/]+\/assets\/\d+\/[a-f0-9-]+)/;
+  const youtubeRegex = /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com|youtu\.be)\/(?:watch\?v=)?(?:embed\/)?(?:v\/)?(?:shorts\/)?([a-zA-Z0-9_-]{11})/;
+
+  const githubMatch = issue.body.match(githubVideoRegex);
+  const youtubeMatch = issue.body.match(youtubeRegex);
+
+  if (youtubeMatch) {
+    return { type: 'youtube', url: youtubeMatch[0], id: youtubeMatch[1] };
+  } else if (githubMatch) {
+    return { type: 'github', url: githubMatch[0] };
+  } else {
+    return null;
   }
+}
 
 async function downloadVideo(url) {
-    try {
-        const response = await axios.get(url, { 
-        responseType: 'arraybuffer',
-        headers: {
+  try {
+    const response = await axios.get(url, { 
+      responseType: 'arraybuffer',
+      headers: {
         'Authorization': `token ${process.env.GITHUB_TOKEN}`
-        }
+      }
     });
     return Buffer.from(response.data, 'binary');
-    } catch (error) {
-    console.error('Error downloading video:', error);
+  } catch (error) {
+    console.error(chalk.red('Error downloading video:'), error);
     throw error;
   }
 }
 
-async function promptUser(question) {
-  return new Promise((resolve) => {
-    rl.question(question, (answer) => {
-      resolve(answer);
-    });
-  });
-}
-
 async function waitForVideoProcessing(mediaId) {
-    let processingInfo;
-    do {
-      const result = await client.v1.mediaInfo(mediaId);
-      processingInfo = result.processing_info;
-      if (processingInfo.state === 'succeeded') {
-        return;
-      }
-      if (processingInfo.state === 'failed') {
-        throw new Error('Video processing failed');
-      }
-      await new Promise(resolve => setTimeout(resolve, processingInfo.check_after_secs * 1000));
-    } while (processingInfo.state === 'pending' || processingInfo.state === 'in_progress');
+  let processingInfo;
+  do {
+    const result = await client.v1.mediaInfo(mediaId);
+    processingInfo = result.processing_info;
+    if (processingInfo.state === 'succeeded') {
+      return;
+    }
+    if (processingInfo.state === 'failed') {
+      throw new Error('Video processing failed');
+    }
+    await new Promise(resolve => setTimeout(resolve, processingInfo.check_after_secs * 1000));
+  } while (processingInfo.state === 'pending' || processingInfo.state === 'in_progress');
 }
 
 async function createTwitterThread(issues) {
@@ -100,42 +88,95 @@ async function createTwitterThread(issues) {
   };
 
   for (const issue of issues) {
-    console.log(`\nIssue: ${issue.title}`);
+    console.log(chalk.cyan(`\nIssue: ${issue.title}`));
     
-    const placement = await promptUser("Enter placement (1, 2, 3, or h for honorable mention): ");
+    const { placement } = await inquirer.prompt([
+      {
+        type: 'list',
+        name: 'placement',
+        message: 'Select placement:',
+        choices: [
+          { name: '1st Place', value: '1' },
+          { name: '2nd Place', value: '2' },
+          { name: '3rd Place', value: '3' },
+          { name: 'Honorable Mention', value: 'h' },
+          { name: 'Skip', value: 'skip' }
+        ]
+      }
+    ]);
+
+    if (placement === 'skip') continue;
+
     switch (placement) {
       case '1':
         placedIssues.first = issue;
-        placedIssues.first.reward = await promptUser("Enter reward amount for 1st place: $");
-        placedIssues.first.opening = `The winner for ${placedIssues.first.reward} is `
+        const { reward: firstReward } = await inquirer.prompt([
+          {
+            type: 'input',
+            name: 'reward',
+            message: 'Enter reward amount for 1st place:',
+            prefix: '$'
+          }
+        ]);
+        placedIssues.first.reward = firstReward;
+        placedIssues.first.opening = `The winner for $${placedIssues.first.reward} is `;
         break;
       case '2':
         placedIssues.second = issue;
-        placedIssues.second.reward = await promptUser("Enter reward amount for 2nd place: $");
-        placedIssues.second.opening = `In second place for ${placedIssues.second.reward} is `
+        const { reward: secondReward } = await inquirer.prompt([
+          {
+            type: 'input',
+            name: 'reward',
+            message: 'Enter reward amount for 2nd place:',
+            prefix: '$'
+          }
+        ]);
+        placedIssues.second.reward = secondReward;
+        placedIssues.second.opening = `In second place for $${placedIssues.second.reward} is `;
         break;
       case '3':
         placedIssues.third = issue;
-        placedIssues.third.reward = await promptUser("Enter reward amount for 3rd place: $");
-        placedIssues.third.opening = `In third place for ${placedIssues.third.reward} is `
+        const { reward: thirdReward } = await inquirer.prompt([
+          {
+            type: 'input',
+            name: 'reward',
+            message: 'Enter reward amount for 3rd place:',
+            prefix: '$'
+          }
+        ]);
+        placedIssues.third.reward = thirdReward;
+        placedIssues.third.opening = `In third place for $${placedIssues.third.reward} is `;
         break;
       case 'h':
         placedIssues.honorableMentions.push(issue);
         break;
-      default:
-        console.log("Invalid placement. Skipping this issue.");
-        continue;
     }
 
-    const twitterUsername = await getTwitterHandleFromGitHub(issue.user.login)
+    const twitterUsername = await getTwitterHandleFromGitHub(issue.user.login);
     if (twitterUsername) {
-      issue.author = twitterUsername
+      issue.author = twitterUsername;
     } else {
-      const useOriginalHandle = await promptUser(`Use original GitHub handle @${issue.user.login}? (Y/n): `);
-      if (useOriginalHandle.toLowerCase() === 'y' || useOriginalHandle.toLowerCase() === '') {
+      const { useOriginalHandle } = await inquirer.prompt([
+        {
+          type: 'confirm',
+          name: 'useOriginalHandle',
+          message: `Use GitHub handle as twitter handle: @${issue.user.login}?`,
+          default: true
+        }
+      ]);
+
+      if (useOriginalHandle) {
         issue.author = `@${issue.user.login}`;
       } else {
-        issue.author = await promptUser("Enter the Twitter handle to use (with the @ if needed): ");
+        const { twitterHandle } = await inquirer.prompt([
+          {
+            type: 'input',
+            name: 'twitterHandle',
+            message: 'Enter the Twitter handle to use:',
+            prefix: '@'
+          }
+        ]);
+        issue.author = twitterHandle.startsWith('@') ? twitterHandle : `@${twitterHandle}`;
       }
     }
   }
@@ -147,98 +188,109 @@ async function createTwitterThread(issues) {
     ...placedIssues.honorableMentions
   ].filter(Boolean);
 
-    // Prompt for introduction text
-    const introText = await promptUser("Enter introduction text for the first tweet: ");
-    const quoteUrl = await promptUser("Enter the URL of the tweet to quote (press Enter to skip): ");
+  const { introText } = await inquirer.prompt([
+    {
+      type: 'input',
+      name: 'introText',
+      message: 'Enter introduction text for the first tweet:'
+    }
+  ]);
 
-    // Post introduction tweet
-    console.log('Posting introduction tweet...');
-    let lastTweetId = null
-    try {
-      let introTweetOptions = { text: introText };
-      if (quoteUrl && quoteUrl.trim() !== '') {
-        introTweetOptions.quote_tweet_id = quoteUrl.split('/').pop();
-      }
-      const introTweet = await client.v2.tweet(introTweetOptions);
-      lastTweetId = introTweet.data.id;
-    } catch (error) {
-    console.error('Error posting intro tweet:', error);
+  const { quoteUrl } = await inquirer.prompt([
+    {
+      type: 'input',
+      name: 'quoteUrl',
+      message: 'Enter the URL of the tweet to quote (press Enter to skip):'
+    }
+  ]);
+
+  console.log(chalk.yellow('Posting introduction tweet...'));
+  let lastTweetId = null;
+  try {
+    let introTweetOptions = { text: introText };
+    if (quoteUrl && quoteUrl.trim() !== '') {
+      introTweetOptions.quote_tweet_id = quoteUrl.split('/').pop();
+    }
+    const introTweet = await client.v2.tweet(introTweetOptions);
+    lastTweetId = introTweet.data.id;
+    console.log(chalk.green('Introduction tweet posted successfully!'));
+  } catch (error) {
+    console.error(chalk.red('Error posting intro tweet:'), error);
     throw error;
   }
 
   for (const issue of orderedIssues) {
     const videoInfo = await extractVideoFromIssue(issue);
     if (!videoInfo) {
-      console.log(`No video found for issue: ${issue.title}`);
+      console.log(chalk.yellow(`No video found for issue: ${issue.title}`));
       continue;
     }
     let mediaId = null;
     if (videoInfo.type === 'github') {
-      console.log(`Downloading video from: ${videoInfo.url}`);
+      console.log(chalk.cyan(`Downloading video from: ${videoInfo.url}`));
       const video = await downloadVideo(videoInfo.url);
-      console.log('Uploading video to Twitter...');
-      const res = await client.v1.uploadMedia(video, { longVideo: true, mimeType: EUploadMimeType.Mp4 }, true); // tried to add additionalOwners: ["myID"] as I've seen mentionned online but didn't work
+      console.log(chalk.yellow('Uploading video to Twitter...'));
+      const res = await client.v1.uploadMedia(video, { longVideo: true, mimeType: EUploadMimeType.Mp4 }, true);
       await waitForVideoProcessing(res.media_id_string);  
-      console.log('uploaded Video')
-      mediaId = res.media_id_string
+      console.log(chalk.green('Video uploaded successfully'));
+      mediaId = res.media_id_string;
     }
 
-    const note = await promptUser(`Enter a note for issue "${issue.title}": `);
+    const { note } = await inquirer.prompt([
+      {
+        type: 'input',
+        name: 'note',
+        message: `Enter a note for issue "${issue.title}":`
+      }
+    ]);
 
-    let tweetText = ''
-    if (issue.opening) {
-      tweetText += issue.opening;
-    } else {
-        tweetText += `Honorable mention for `;
-    }
-    tweetText += `${issue.author}! ${note}`
+    let tweetText = issue.opening ? issue.opening : 'Honorable mention for ';
+    tweetText += `${issue.author}! ${note}`;
     
     if (videoInfo.type === 'youtube') {
-        tweetText += `\n\nWatch the submission: https://youtu.be/${videoInfo.id}`;
+      tweetText += `\n\nWatch the submission: https://youtu.be/${videoInfo.id}`;
     }
     
     const tweetOptions = {
-        text: tweetText,
+      text: tweetText,
     };
 
     if (videoInfo.type === 'github') {
-        tweetOptions.media= { media_ids: [mediaId] }
+      tweetOptions.media = { media_ids: [mediaId] };
     }
 
     if (lastTweetId) {
       tweetOptions.reply = { in_reply_to_tweet_id: lastTweetId };
     }
 
-    console.log('Posting tweet...', tweetOptions);
+    console.log(chalk.yellow('Posting tweet...'));
     try {
-        const tweet = await client.v2.tweet(tweetOptions);
-        lastTweetId = tweet.data.id;
-        console.log(`Tweet posted: ${tweet.data.id}`);
+      const tweet = await client.v2.tweet(tweetOptions);
+      lastTweetId = tweet.data.id;
+      console.log(chalk.green(`Tweet posted: ${tweet.data.id}`));
     } catch (error) {
-      console.error('Error posting tweet, retrying without media');
-
+      console.error(chalk.red('Error posting tweet, retrying without media'));
       
       tweetText += `\n\nWatch the submission: ${videoInfo.url}`;
-      const tweetOptions = {
+      const retryTweetOptions = {
         text: tweetText,
       };
 
       if (lastTweetId) {
-        tweetOptions.reply = { in_reply_to_tweet_id: lastTweetId };
+        retryTweetOptions.reply = { in_reply_to_tweet_id: lastTweetId };
       }
 
       try {
-        const tweet = await client.v2.tweet(tweetOptions);
+        const tweet = await client.v2.tweet(retryTweetOptions);
         lastTweetId = tweet.data.id;
-        console.log(`Tweet posted: ${tweet.data.id}`);
+        console.log(chalk.green(`Tweet posted: ${tweet.data.id}`));
       } catch (error) {
-        console.log('Crashed for good, skipping this issue')
-        continue
+        console.log(chalk.red('Failed to post tweet, skipping this issue'));
+        continue;
       }      
-  }
+    }
   }
 }
-
 
 async function getLatestRepositories() {
   try {
@@ -248,9 +300,9 @@ async function getLatestRepositories() {
       direction: 'desc',
       per_page: 5
     });
-    return data.map(repo => ({ name: repo.name, url: repo.html_url }));
+    return data.map(repo => ({ name: repo.name, value: repo.html_url }));
   } catch (error) {
-    console.error('Error fetching repositories:', error.message);
+    console.error(chalk.red('Error fetching repositories:'), error.message);
     return [];
   }
 }
@@ -259,45 +311,61 @@ async function selectRepository() {
   const repos = await getLatestRepositories();
   
   if (repos.length === 0) {
-    console.log('No repositories found or error occurred. Please enter a custom URL.');
-    return await promptUser('Enter the GitHub repository URL: ');
+    console.log(chalk.yellow('No repositories found or error occurred. Please enter a custom URL.'));
+    const { url } = await inquirer.prompt([
+      {
+        type: 'input',
+        name: 'url',
+        message: 'Enter the GitHub repository URL:',
+        validate: input => input.includes('github.com') ? true : 'Please enter a valid GitHub URL'
+      }
+    ]);
+    return url;
   }
 
-  console.log('Select a repository or enter a custom URL:');
-  repos.forEach((repo, index) => {
-    console.log(`${index + 1}. ${repo.name}`);
-  });
-  console.log('6. Enter custom URL');
+  repos.push({ name: 'Enter custom URL', value: 'custom' });
 
-  const choice = await promptUser('Enter your choice (1-6): ');
-  
-  if (choice >= 1 && choice <= 5) {
-    return repos[choice - 1].url;
-  } else {
-    console.log('Invalid choice. Please enter a custom URL.');
-    return await promptUser('Enter the GitHub repository URL: ');
+  const { repo } = await inquirer.prompt([
+    {
+      type: 'list',
+      name: 'repo',
+      message: 'Select a repository or enter a custom URL:',
+      choices: repos
+    }
+  ]);
+
+  if (repo === 'custom') {
+    const { url } = await inquirer.prompt([
+      {
+        type: 'input',
+        name: 'url',
+        message: 'Enter the GitHub repository URL:',
+        validate: input => input.includes('github.com') ? true : 'Please enter a valid GitHub URL'
+      }
+    ]);
+    return url;
   }
+
+  return repo;
 }
 
 async function main() {
   try {
+    console.log(chalk.blue.bold('GitHub Repository Selector and Twitter Thread Creator'));
+    
     const url = await selectRepository();
     const { owner, repo } = await getRepoInfo(url);
-    console.log(`Fetching issues for ${owner}/${repo}...`);
+    console.log(chalk.cyan(`Fetching issues for ${owner}/${repo}...`));
     const issues = await getIssues(owner, repo);
-    console.log(`Found ${issues.length} issues.`);
-    return 
+    console.log(chalk.green(`Found ${issues.length} issues.`));
+
     await createTwitterThread(issues);
 
-    console.log('Twitter thread created successfully!');
+    console.log(chalk.green.bold('Twitter thread created successfully!'));
   } catch (error) {
-    console.error('An error occurred:', error.message);
-  } finally {
-    rl.close();
+    console.error(chalk.red('An error occurred:'), error.message);
   }
 }
-
-main();
 
 async function getTwitterHandleFromGitHub(username) {
   try {
@@ -307,27 +375,9 @@ async function getTwitterHandleFromGitHub(username) {
     }
     return null;
   } catch (error) {
-    console.error('Error fetching GitHub user info:', error);
+    console.error(chalk.red('Error fetching GitHub user info:'), error);
     return null;
   }
 }
 
-async function postVideo() {
-  console.log('Downloading video...');
-  const video = await downloadVideo("https://github.com/user-attachments/assets/941c23c7-4524-416c-8109-ab7346a187d4");
-  //https://github.com/user-attachments/assets/c9ccbd5a-aab7-470d-81bd-040f79eb4ee7
-  console.log('Uploading video to Twitter...');
-  const res = await client.v1.uploadMedia(video, { longVideo: true, mimeType: EUploadMimeType.Mp4 }, true); // tried to add additionalOwners: ["myID"] as I've seen mentionned online but didn't work
-  await waitForVideoProcessing(res.media_id_string);  
-  
-  const tweetOptions = {
-    text: "Posting with a video working",
-    media: { media_ids: [res.media_id_string] }
-  };
-
-  try {
-    const tweet = await client.v2.tweet(tweetOptions);
-  } catch (error) {
-    console.log("ERROR WHILE POSTING VID", JSON.stringify(error))
-  }
-}
+main();
