@@ -239,15 +239,54 @@ async function createTwitterThread(issues) {
   }
 }
 
+
+async function getLatestRepositories() {
+  try {
+    const { data } = await octokit.repos.listForOrg({
+      org: 'Algorithm-Arena',
+      sort: 'created',
+      direction: 'desc',
+      per_page: 5
+    });
+    return data.map(repo => ({ name: repo.name, url: repo.html_url }));
+  } catch (error) {
+    console.error('Error fetching repositories:', error.message);
+    return [];
+  }
+}
+
+async function selectRepository() {
+  const repos = await getLatestRepositories();
+  
+  if (repos.length === 0) {
+    console.log('No repositories found or error occurred. Please enter a custom URL.');
+    return await promptUser('Enter the GitHub repository URL: ');
+  }
+
+  console.log('Select a repository or enter a custom URL:');
+  repos.forEach((repo, index) => {
+    console.log(`${index + 1}. ${repo.name}`);
+  });
+  console.log('6. Enter custom URL');
+
+  const choice = await promptUser('Enter your choice (1-6): ');
+  
+  if (choice >= 1 && choice <= 5) {
+    return repos[choice - 1].url;
+  } else {
+    console.log('Invalid choice. Please enter a custom URL.');
+    return await promptUser('Enter the GitHub repository URL: ');
+  }
+}
+
 async function main() {
   try {
-    const githubUrl = await promptUser('Enter the GitHub repository URL: ');
-
-    const { owner, repo } = await getRepoInfo(githubUrl);
+    const url = await selectRepository();
+    const { owner, repo } = await getRepoInfo(url);
     console.log(`Fetching issues for ${owner}/${repo}...`);
     const issues = await getIssues(owner, repo);
     console.log(`Found ${issues.length} issues.`);
-
+    return 
     await createTwitterThread(issues);
 
     console.log('Twitter thread created successfully!');
